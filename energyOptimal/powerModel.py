@@ -2,7 +2,7 @@ import pickle
 import numpy as np
 from scipy.optimize import least_squares
 
-class powerFitting:
+class powerModel:
     def __init__(self, filename= ''):
         self.frequencies = []
         self.threads = []
@@ -30,14 +30,26 @@ class powerFitting:
         ret = np.sort(ret) # median
         return ret[20:-20]
 
-    def loadData(self, filename, verbose=0, ipmi_source='dcOutPower',
-                load_sensors= True, freqs_allow=[], thrs_allow=[]):
+    def loadData(self, filename, verbose=0, freqs_filter=[], thrs_filter=[],
+                ipmi_source='dcOutPower', load_sensors= True):
+        '''
+            loads the power measuments from file
+
+            filename: string
+            verbose: number, level of verbose mode
+            freqs_filter: list, list of frequencies to load
+            thrs_filter: list, list of threads to load
+            ipmi_source: string, source name on IPMI sensor can be dcOutPower or acInPower
+            load_sensors: boolean, load the sensors data
+
+            return frequencies, threads, powers, sensors
+        '''
         with open(filename,'rb+') as f:
             data= pickle.load(f)
 
         has_sensors= 'sensors' in data[0]['threads'][0]['lpcpu'][0].keys()
-        has_ipmi= 'ipmi' in data[1]['threads'][0]['lpcpu'][0].keys()
-        has_rapl= 'rapl' in data[1]['threads'][0]['lpcpu'][0].keys()
+        has_ipmi= 'ipmi' in data[0]['threads'][0]['lpcpu'][0].keys()
+        has_rapl= 'rapl' in data[0]['threads'][0]['lpcpu'][0].keys()
 
         if verbose > 1 and has_ipmi:
             print("Amostras Frequencia nThreads Potencia 1 Potencia 2 Total Temperaturas")
@@ -46,17 +58,17 @@ class powerFitting:
         # get sensors name
 
         for thr in data[0]['threads']:
-            if len(thrs_allow) > 0 and thr['nthreads'] not in thrs_allow: continue
+            if len(thrs_filter) > 0 and thr['nthreads'] not in thrs_filter: continue
             self.threads.append(thr['nthread'])
 
         for d in data:
             assert len(d['threads']) == len(self.threads)
             freq = int(d['freq'])
-            if len(freqs_allow) > 0 and freq not in freqs_allow: continue
+            if len(freqs_filter) > 0 and freq not in freqs_filter: continue
             freq= freq/1e6
             self.frequencies.append(freq)
             for thr in d['threads']:
-                if len(thrs_allow) > 0 and thr['nthreads'] not in thrs_allow: continue
+                if len(thrs_filter) > 0 and thr['nthreads'] not in thrs_filter: continue
                 for pcpu in thr['lpcpu']:
                     pw = 0
                     sensors_dict= {}
@@ -113,6 +125,14 @@ class powerFitting:
         return self.frequencies, self.threads, self.powers, self.sensors
 
     def fit(self, verbose= 0):
+        '''
+        Fits the power model equation with the values loaded, need to call loadData first.
+
+        verbose: number, level of verbose mode
+
+        return constants fitted
+        '''
+        assert len(self.powers) > 0
         err= lambda x,f,p,y: self.power_model(x,f,p)-y
         x0= np.ones(4)
         f= np.repeat(self.frequencies,len(self.threads))
@@ -124,12 +144,25 @@ class powerFitting:
         return self.power_model_x
     
     def power_estimate(self, f, p):
+        '''
+        Estimetes the power with the model fited, need to call fit first
+
+        f: list, frequency list
+        p: list, number of cores list
+
+        return list of estimatives
+        '''
         assert len(self.power_model_x)>0
         f= np.repeat(self.frequencies,len(self.threads))
         p= np.tile(self.threads,len(self.frequencies))
         return self.power_model(self.power_model_x,f,p)
     
     def error(self):
+        '''
+        Calculates the error from the measured values to the model
+
+        return error value
+        '''
         assert len(self.power_model_x)>0
         estimative= np.array(self.power_estimate(self.frequencies, self.threads))
         real= np.array(self.powers)
