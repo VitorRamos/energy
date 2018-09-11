@@ -5,6 +5,12 @@ from mpl_toolkits.mplot3d import Axes3D
 fig = plt.figure()
 ax = fig.gca(projection='3d')
 
+def setProps(xlabel='', ylabel='', zlabel='', title=''):
+    plt.title(title)
+    ax.set_xlabel(xlabel, fontsize=10)
+    ax.set_ylabel(ylabel, fontsize=10)
+    ax.set_zlabel(zlabel, fontsize=10)
+
 def plot3D(x, y, z, points=True):
     z= np.reshape(z, (len(x), len(y)))
 
@@ -17,12 +23,10 @@ def plot3D(x, y, z, points=True):
         surf = ax.scatter(X, Y, Z, antialiased=True, color='r')
     else:
         surf = ax.plot_wireframe(X, Y, Z, antialiased=True)
-
-    ax.set_xlabel('Frequency (GHz)', fontsize=10)
+    
     ax.set_xticks(np.arange(0, len(x), 2))
     ax.set_xticklabels(x[::2], fontsize=10)
 
-    ax.set_ylabel('Active cores', fontsize=10)
     ax.set_yticks(np.arange(0, len(y), 2))
     ax.set_yticklabels(y[::2], fontsize=10)
 
