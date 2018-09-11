@@ -1,6 +1,3 @@
-#class dataProcessing:
-#class monitoring:
-
 import pickle
 import numpy as np
 from scipy.optimize import least_squares
@@ -127,6 +124,13 @@ class powerFitting:
         return self.power_model_x
     
     def power_estimate(self, f, p):
+        assert len(self.power_model_x)>0
         f= np.repeat(self.frequencies,len(self.threads))
         p= np.tile(self.threads,len(self.frequencies))
         return self.power_model(self.power_model_x,f,p)
+    
+    def error(self):
+        assert len(self.power_model_x)>0
+        estimative= np.array(self.power_estimate(self.frequencies, self.threads))
+        real= np.array(self.powers)
+        return np.sum(np.abs(real-estimative))/len(real)
