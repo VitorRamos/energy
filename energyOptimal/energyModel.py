@@ -1,12 +1,17 @@
 import pickle
 import numpy as np
 import pandas as pd
+from sklearn.svm import SVR
+from sklearn.model_selection import train_test_split
+from sklearn.model_selection import cross_validate, cross_val_score
 
 class energyModel:
     def __init__(self):
         self.frequencies = []
         self.threads = []
         self.powers = []
+        self.dataFrame= []
+        self.svr= None
 
     def loadData(self, filename, arg_num, verbose=0, method= 'constTime', createDataFrame= True,
                  freqs_filter=[], thrs_filter=[]):
@@ -108,7 +113,64 @@ class energyModel:
                         'T', p['total_time'], 'P', pw, 'E', p['total_time']*pw)
 
         if createDataFrame:
-            df = pd.DataFrame(df, columns=['freq', 'thr', 'in', 'time', 'pw'])
-            return df
+            self.dataFrame = pd.DataFrame(df, columns=['freq', 'thr', 'in', 'time', 'pw'])
+            return self.dataFrame
         
         return self.frequencies, self.threads, self.powers
+    
+    def saveDataframe(self):
+        pass
+
+    def loadDataFrame(self):
+        pass
+
+    def fit(self, C_=10e3, gamma_=0.1):
+        '''
+        C_: svr parameter
+        gamma_: svr parameter
+        test_size: percentage of samples used on test
+
+        return svr
+        '''
+        assert self.dataFrame is not None
+        self.svr= SVR(C=C_,gamma=gamma_)
+        model_data= self.dataFrame.copy()
+        cat = pd.factorize(model_data['in'])
+        model_data['in'] = cat[0] + 1
+        model_data['freq'] = model_data['freq'].astype(float)/1e6
+
+        X = model_data[['freq', 'thr', 'in']].values
+        Y = model_data['time'].astype(float).values
+        Xtrain, Xtest, Ytrain, Ytest = train_test_split(X, Y, test_size=0.1, random_state=0)
+        self.svr.fit(Xtrain, Ytrain)
+
+        return self.svr
+
+    def saveSVR(self):
+        pass
+
+    def loadSVR(self):
+        pass
+
+    def crossValidate(self, verbose=0):
+        '''
+            TODO
+        '''
+        assert self.svr is not None
+        def mpe(clf, X, y):
+            return np.sum(np.abs(y - clf.predict(X)) / y) / len(y)
+
+        X = self.dataFrame[['freq', 'thr', 'in']].values
+        Y = self.dataFrame['time'].astype(float).values
+        scores= cross_val_score(self.svr,  X, Y, cv=10, scoring=mpe, n_jobs=4)
+        if verbose > 0:
+            print('Cross validacao mpe', scores*100, np.mean(scores)*100)
+        return scores
+
+    def energy_estimate(self, X):
+        assert self.svr is not None
+        Y= self.svr.predict(X)
+        return Y
+
+    def error(self):
+        pass
