@@ -202,6 +202,6 @@ class performanceModel:
         model_data['in'] = cat[0] + 1
         model_data['freq'] = model_data['freq'].astype(float)/1e6
 
-        estimative= self.time_estimate(model_data[['freq', 'thr', 'in']].values)
+        estimative= self.estimate(model_data[['freq', 'thr', 'in']].values)
         real= np.array(model_data['time'].values)
         return np.sum(np.abs(real-estimative))/len(real)

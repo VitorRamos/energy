@@ -2,3 +2,4 @@ venv/
 data/
 .vscode/
 energyOptimal/__pycache__
+*.pyc
