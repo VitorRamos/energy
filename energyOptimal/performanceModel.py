@@ -5,7 +5,7 @@ from sklearn.svm import SVR
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import cross_validate, cross_val_score
 
-class energyModel:
+class performanceModel:
     def __init__(self):
         self.frequencies = []
         self.threads = []
@@ -118,14 +118,20 @@ class energyModel:
         
         return self.frequencies, self.threads, self.powers
     
-    def saveDataframe(self):
-        pass
+    def saveDataframe(self, filename):
+        assert self.dataFrame is not None
+        with open(filename, 'wb+') as f:
+            pickle.dump(self.dataFrame, f, pickle.HIGHEST_PROTOCOL)
 
-    def loadDataFrame(self):
-        pass
+    def loadDataFrame(self, filename):
+        with open(filename, 'rb+') as f:
+            self.dataFrame= pickle.load(f)
+        return self.dataFrame
 
     def fit(self, C_=10e3, gamma_=0.1):
         '''
+        Fit the svr model with values from dataframe
+
         C_: svr parameter
         gamma_: svr parameter
         test_size: percentage of samples used on test
@@ -146,15 +152,19 @@ class energyModel:
 
         return self.svr
 
-    def saveSVR(self):
-        pass
+    def saveSVR(self, filename):
+        assert self.svr is not None
+        with open(filename, 'wb+') as f:
+            pickle.dump(self.svr, f, pickle.HIGHEST_PROTOCOL)
 
-    def loadSVR(self):
-        pass
+    def loadSVR(self, filename):
+        with open(filename, 'rb+') as f:
+            self.svr= pickle.load(f)
+        return self.svr
 
     def crossValidate(self, verbose=0):
         '''
-            TODO
+            Cross validate the performance model
         '''
         assert self.svr is not None
         def mpe(clf, X, y):
@@ -167,10 +177,31 @@ class energyModel:
             print('Cross validacao mpe', scores*100, np.mean(scores)*100)
         return scores
 
-    def energy_estimate(self, X):
+    def estimate(self, X):
+        '''
+        Estimate the time from the list of [freq, thr, in]
+        
+        return list of estimatives
+        '''
         assert self.svr is not None
         Y= self.svr.predict(X)
         return Y
+    
 
     def error(self):
-        pass
+        '''
+            Calculate the error from the measured values, need svr and dataframe
+
+            return error
+        '''
+        assert self.svr is not None
+        assert self.dataFrame is not None
+        
+        model_data= self.dataFrame.copy()
+        cat = pd.factorize(model_data['in'])
+        model_data['in'] = cat[0] + 1
+        model_data['freq'] = model_data['freq'].astype(float)/1e6
+
+        estimative= self.time_estimate(model_data[['freq', 'thr', 'in']].values)
+        real= np.array(model_data['time'].values)
+        return np.sum(np.abs(real-estimative))/len(real)

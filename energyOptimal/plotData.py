@@ -13,7 +13,6 @@ def setProps(xlabel='', ylabel='', zlabel='', title=''):
     ax.set_zlabel(zlabel, fontsize=10)
 
 def plot3D(x, y, z, legend='', points=True):
-
     z= np.reshape(z, (len(x), len(y)))
     X = np.arange(0, len(x), 1)
     Y = np.arange(0, len(y), 1)
