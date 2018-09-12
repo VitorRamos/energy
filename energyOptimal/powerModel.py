@@ -11,7 +11,7 @@ class powerModel:
         self.power_model= lambda x,f,p: x[0]*f**3*p+x[1]*f*p+x[2]+x[3]*(np.floor(p/17)+1)
         self.power_model_x= []
         if filename:
-            self.loadData(filename)
+            self.load(filename)
 
     def getVectorIPMI(self, ipmi, name):
         ret1 = []
@@ -143,7 +143,17 @@ class powerModel:
             res_robust
         return self.power_model_x
     
-    def power_estimate(self, f, p):
+    def save(self,filename):
+        assert self.power_model_x is not None
+        with open(filename, 'wb+') as f:
+            pickle.dump(self.power_model_x, f, pickle.HIGHEST_PROTOCOL)
+
+    def load(self,filename):
+        with open(filename, 'rb+') as f:
+            self.power_model_x= pickle.load(f)
+        return self.power_model_x
+    
+    def estimate(self, f, p):
         '''
         Estimetes the power with the model fited, need to call fit first
 
@@ -153,8 +163,9 @@ class powerModel:
         return list of estimatives
         '''
         assert len(self.power_model_x)>0
-        f= np.repeat(self.frequencies,len(self.threads))
-        p= np.tile(self.threads,len(self.frequencies))
+        f_len= len(f)
+        f= np.repeat(f,len(p))
+        p= np.tile(p,f_len)
         return self.power_model(self.power_model_x,f,p)
     
     def error(self):

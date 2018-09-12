@@ -6,12 +6,15 @@ from sklearn.model_selection import train_test_split
 from sklearn.model_selection import cross_validate, cross_val_score
 
 class performanceModel:
-    def __init__(self):
+    def __init__(self, dataFramefile= '', svrfile=''):
         self.frequencies = []
         self.threads = []
         self.powers = []
-        self.dataFrame= []
+        self.dataFrame= None
         self.svr= None
+        if dataFramefile and svrfile:
+            self.loadDataFrame(dataFramefile)
+            self.loadSVR(svrfile)
 
     def loadData(self, filename, arg_num, verbose=0, method= 'constTime', createDataFrame= True,
                  freqs_filter=[], thrs_filter=[]):
@@ -114,6 +117,9 @@ class performanceModel:
 
         if createDataFrame:
             self.dataFrame = pd.DataFrame(df, columns=['freq', 'thr', 'in', 'time', 'pw'])
+            cat = pd.factorize(self.dataFrame['in'])
+            self.dataFrame['in_cat'] = cat[0] + 1
+            self.dataFrame['freq'] = self.dataFrame['freq'].astype(float)/1e6
             return self.dataFrame
         
         return self.frequencies, self.threads, self.powers
@@ -140,13 +146,8 @@ class performanceModel:
         '''
         assert self.dataFrame is not None
         self.svr= SVR(C=C_,gamma=gamma_)
-        model_data= self.dataFrame.copy()
-        cat = pd.factorize(model_data['in'])
-        model_data['in'] = cat[0] + 1
-        model_data['freq'] = model_data['freq'].astype(float)/1e6
-
-        X = model_data[['freq', 'thr', 'in']].values
-        Y = model_data['time'].astype(float).values
+        X = self.dataFrame[['freq', 'thr', 'in_cat']].values
+        Y = self.dataFrame['time'].astype(float).values
         Xtrain, Xtest, Ytrain, Ytest = train_test_split(X, Y, test_size=0.1, random_state=0)
         self.svr.fit(Xtrain, Ytrain)
 
@@ -162,20 +163,34 @@ class performanceModel:
             self.svr= pickle.load(f)
         return self.svr
 
-    def crossValidate(self, verbose=0):
+    def mpe(self,clf, X, y):
+        return np.sum(np.abs(y-clf.predict(X))/y)/len(y)
+    def mae(self,clf, X, y):
+        return np.sum(np.abs(y-clf.predict(X)))/len(y)
+
+    def crossValidate(self, verbose=0, method='mpe'):
         '''
             Cross validate the performance model
+            method: string
+                 mab, mean abusolute error
+                 mpe, mean percentage error
+
+            return scores
         '''
         assert self.svr is not None
-        def mpe(clf, X, y):
-            return np.sum(np.abs(y - clf.predict(X)) / y) / len(y)
 
-        X = self.dataFrame[['freq', 'thr', 'in']].values
+        X = self.dataFrame[['freq', 'thr', 'in_cat']].values
         Y = self.dataFrame['time'].astype(float).values
-        scores= cross_val_score(self.svr,  X, Y, cv=10, scoring=mpe, n_jobs=4)
+        scores= cross_val_score(self.svr,  X, Y, cv=10, scoring= self.mae if method == 'mae' else self.mpe, n_jobs=4)
         if verbose > 0:
             print('Cross validacao mpe', scores*100, np.mean(scores)*100)
         return scores
+
+    def estimate2(self, frs, thrs, ins):
+        X= np.array(np.meshgrid(frs,thrs,ins)).T.reshape(-1,3)
+        Y= self.svr.predict(X)
+
+        return Y
 
     def estimate(self, X):
         '''
@@ -188,20 +203,21 @@ class performanceModel:
         return Y
     
 
-    def error(self):
+    def error(self, method='mab'):
         '''
             Calculate the error from the measured values, need svr and dataframe
 
+            method: string
+                    mab, mean abusolute error
+                    mpe, mean percentage error
             return error
         '''
         assert self.svr is not None
         assert self.dataFrame is not None
-        
-        model_data= self.dataFrame.copy()
-        cat = pd.factorize(model_data['in'])
-        model_data['in'] = cat[0] + 1
-        model_data['freq'] = model_data['freq'].astype(float)/1e6
 
-        estimative= self.estimate(model_data[['freq', 'thr', 'in']].values)
-        real= np.array(model_data['time'].values)
-        return np.sum(np.abs(real-estimative))/len(real)
+        estimative= self.estimate(self.dataFrame[['freq', 'thr', 'in_cat']].values)
+        real= np.array(self.dataFrame['time'].values)
+        if method == 'mae':
+            return np.sum(np.abs(real-estimative))/len(real)
+        elif method == 'mpe':
+            return np.sum(np.abs((real-estimative)/real))/len(real)
