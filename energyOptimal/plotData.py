@@ -7,7 +7,7 @@ fig = plt.figure()
 ax = fig.gca(projection='3d')
 legends= []
 
-axInput = plt.axes([0.25, 0.0, 0.65, 0.03], facecolor='lightgoldenrodyellow')
+axInput = None
 sin= None
 
 def setProps(xlabel='', ylabel='', zlabel='', title=''):
@@ -32,7 +32,8 @@ def update_data(val):
     fig.canvas.draw_idle()
 
 def createSlider(label_, valmin_, valmax_):
-    global sin
+    global sin, axInput
+    axInput= plt.axes([0.25, 0.0, 0.65, 0.03], facecolor='lightgoldenrodyellow')
     sin = Slider(ax=axInput, label=label_, valmin=valmin_, valmax=valmax_, valinit=valmin_)
     sin.on_changed(update_data)
     update_data(valmin_)
@@ -66,6 +67,7 @@ def plotShow(showLegend= False):
     plt.show()
 
 def savePlot(filename, showLegend= False):
-    if showLegend: plt.legend(legends)
+    if showLegend: ax.legend(legends)
     plt.tight_layout()
     plt.savefig(filename)
+    ax.clear()
