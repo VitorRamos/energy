@@ -116,7 +116,11 @@ class performanceModel:
                         'T', p['total_time'], 'P', pw, 'E', p['total_time']*pw)
 
         if createDataFrame:
-            self.dataFrame = pd.DataFrame(df, columns=['freq', 'thr', 'in', 'time', 'pw'])
+            if method == 'constTime':
+                self.dataFrame = pd.DataFrame(df, columns=['freq', 'thr', 'in', 'time', 'energy'])
+            else:
+                self.dataFrame = pd.DataFrame(df, columns=['freq', 'thr', 'in', 'time', 'pw'])
+                self.dataFrame['energy']= self.dataFrame['time']*self.dataFrame['pw']
             cat = pd.factorize(self.dataFrame['in'])
             self.dataFrame['in_cat'] = cat[0] + 1
             self.dataFrame['freq'] = self.dataFrame['freq'].astype(float)/1e6
