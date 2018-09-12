@@ -175,6 +175,6 @@ class powerModel:
         return error value
         '''
         assert len(self.power_model_x)>0
-        estimative= np.array(self.power_estimate(self.frequencies, self.threads))
+        estimative= np.array(self.estimate(self.frequencies, self.threads))
         real= np.array(self.powers)
         return np.sum(np.abs(real-estimative))/len(real)
