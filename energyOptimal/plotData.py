@@ -48,9 +48,9 @@ def plot3D(x, y, z, legend='', points=True):
     X, Y = np.meshgrid(x, y)
 
     if points:
-        surf = ax.scatter(X, Y, Z, antialiased=True, color='b')
+        ax.scatter(X, Y, Z, antialiased=True, color='b')
     else:
-        surf = ax.plot_wireframe(X, Y, Z, antialiased=True, color='black')
+        ax.plot_wireframe(X, Y, Z, antialiased=True, color='black')
     
     ax.set_xticks(x[::2])#np.arange(0, len(x), 2))
     ax.set_xticklabels(x[::2], fontsize=10)
