@@ -1,1 +1,1 @@
-from .cpufreq import CPUFreq
+from .cpufreq import cpuFreq
