@@ -56,7 +56,7 @@ class performanceModel:
                 for p in thr['lpcpu']:
                     pw = []
                     if has_rapl:
-                        if method == 'constTime':
+                        if method == 'timeDiff':
                             pw= 0
                             for i in range(len(p['rapl'])):
                                 pot = p['rapl'][i]['sensor']
@@ -68,17 +68,17 @@ class performanceModel:
                             for s in p['rapl']:
                                 if float(s['sensor']) > 0:
                                     if createDataFrame and method == 'allSamples':
-                                        row = [d['freq'], thr['nthread'], p['arg'][arg_num], s['time'], pot]
+                                        row = [d['freq'], thr['nthread'], p['arg'][arg_num], s['time'], float(s['sensor'])]
                                         df.append(row)
                                     pw.append(float(s['sensor']))
-                            if method == 'timeDiff':
+                            if method == 'constTime':
                                 pw= np.mean(pw)
                             elif method == 'allSamples':
                                 if createDataFrame:
                                     pw= np.mean(pw)
 
                     elif has_ipmi:
-                        if method == 'constTime':
+                        if method == 'timeDiff':
                             pw= 0
                             for i in range(len(p['ipmi'])):
                                 pot = p['ipmi'][i]['sensor']['sources'][0]['dcOutPower']
@@ -97,7 +97,7 @@ class performanceModel:
                                     df.append(row)
                                 pw.append(pot)
 
-                            if method == 'timeDiff':
+                            if method == 'constTime':
                                 pw= np.mean(pw)
                             elif method == 'allSamples':
                                 if createDataFrame:
@@ -116,7 +116,7 @@ class performanceModel:
                         'T', p['total_time'], 'P', pw, 'E', p['total_time']*pw)
 
         if createDataFrame:
-            if method == 'constTime':
+            if method == 'timeDiff':
                 self.dataFrame = pd.DataFrame(df, columns=['freq', 'thr', 'in', 'time', 'energy'])
             else:
                 self.dataFrame = pd.DataFrame(df, columns=['freq', 'thr', 'in', 'time', 'pw'])
