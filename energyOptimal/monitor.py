@@ -1,6 +1,7 @@
 from .rapl import RAPL
 from .ipmi import IPMI
-from .cpufreq import CPUFreq
+from .cpufreq import cpuFreq
+
 
 import subprocess
 import threading
@@ -8,92 +9,96 @@ import pickle
 import time
 import os
 
-dir= os.getcwd()
+class monitorProcess:
+	def __init__(self, program_name_, sensor_type_='ipmi'):
+		self.sensor_type= sensor_type_
+		if self.sensor_type =="rapl":
+			self.sensor= RAPL("service3")
+		if self.sensor_type =="ipmi":
+			self.sensor= IPMI("http://localhost:8080")
+		
+		self.cpu= cpuFreq()
+		self.models= []
+		self.program_name= program_name_
+		self.save_name= program_name_
 
-class programa(threading.Thread):
-	def __init__(self, program_, args_):
-		threading.Thread.__init__(self)
-		self.args= args_
-		self.program= program_
-
-	def run(self):
-		os.chdir("apps/"+str(self.program)+"_")
-		print(["./"+str(self.program)]+self.args)
-		subprocess.call(["./"+str(self.program)]+self.args)
-
-def save_data(name, data):
-	with open("data/"+ name +".pkl","wb") as f:
-		pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
-
-
-def monitoring(program_name, list_threads, list_args, idle_time, sensor_type, save_name):
-	if sensor_type =="rapl":
-		sensor= RAPL("service3")
-	if sensor_type =="ipmi":
-		sensor= IPMI("http://localhost:8080")
-
-	cpu= CPUFreq()
-	for xcpu in range(1,64):
-		cpu.enable_cpu(xcpu)
-	cpu.change_governo("userspace")
-	freq= cpu.get_frequencies()[0]["data"]
-	for xcpu in range(32,64):
-                cpu.disable_cpu(xcpu)
-	models= []
-	for f in freq[1:]:
-		for xcpu in range(0,32):
-			cpu.change_frequency(f, xcpu)
+	def start(self, list_threads, list_args, idle_time, verbose=0):
 		try:
+			cpu= cpuFreq()
+			cpu.reset()
+			cpu.disable_hyperthread()
+			cpu.set_governors("userspace")
+			freq= cpu.get_available_frequencies()
+			cpus= cpu.get_online_cpus()
+		except Exception as e:
+			print("Unable to control cpu", e)
+			exit(0)
+
+		for f in freq:
 			info_threads= []
 			for thr in list_threads:
+				try:
+					cpu.enable_cpu(cpus)
+					cpu.set_governors("userspace")
+					cpu.disable_cpu(cpus[thr:])
+					cpu.set_frequencies(f)
+				except Exception as e:
+					print("Unable to control frequency", e)
+					exit(0)
 				info_pcpu= []
 				for arg in list_args:
-					for xcpu in range(thr,32):
-						cpu.disable_cpu(xcpu)
-#					arg[0]= str(thr)
-					arg= map(lambda s: str.replace(s,"__nt__", str(thr)), arg)
-					print("Argumentos", arg)
-					os.chdir(dir)
-					program= programa(program_name,arg)
-					program.start()
 					info_sensor= []
+
+					arg= list(map(lambda s: str.replace(s,"__nt__", str(thr)), arg))
+					if verbose > 0:
+						print("Argumentos", arg)
+					
+					program= subprocess.Popen(["./"+str(self.program_name)]+arg)
 					ti = time.time()
-					while program.is_alive():
-						print("Tempo", time.time()-ti, "Frequencia ", f, " nThreads", thr)
+					while program.poll() == None:
+						if verbose > 0:
+							print("Tempo", time.time()-ti, "Frequencia ", f, " nThreads", thr)
+
 						tg= time.time()
-						info= {"time": time.time()-ti,"sensor":sensor.get_data()}
+						info= {"time": time.time()-ti,"sensor": self.sensor.get_data()}
 						info_sensor.append(info.copy())
-#						sensor.print_data()
-						sensor.print_pot()
+						if verbose > 2:
+							self.sensor.print_data()
+						elif verbose > 1:
+							self.sensor.print_pot()
+						
 						tg= time.time()-tg
 #						if 1-tg >= 0:
 #							time.sleep(1-tg)
+					program.wait()
 					tt= time.time()-ti
-					program.join()
-					print("Tempo total", tt)
-					l1= {"arg":list(arg),"total_time":tt, sensor_type:info_sensor}
+					if verbose > 0:
+						print("Tempo total", tt)
+
+					l1= {"arg":list(arg),"total_time":tt, self.sensor_type:info_sensor}
 					info_pcpu.append(l1.copy())
-					for xcpu in range(1,32):
-						cpu.enable_cpu(xcpu)
+
 					time.sleep(idle_time)
-					for xcpu in range(0,32):
-						cpu.change_frequency(f, xcpu)
-					time.sleep(idle_time)
+				
 				l2= {"nthread":thr,"lpcpu":info_pcpu}
 				info_threads.append(l2.copy())
-		except Exception as e:
-			print(e)
-		model= {"freq":f,"threads":info_threads}
-		models.append(model.copy())
+
+			model= {"freq":f,"threads":info_threads}
+			self.models.append(model.copy())
+
+		self.save()
+
+		cpu.reset()
+		# cpu.set_governors("userspace")
 	
-	try:
-		os.chdir(dir)
-		save_data(save_name, models)
-		for xcpu in range(1,64):
-			cpu.enable_cpu(xcpu)
-		cpu.change_governo("userspace")
-	except Exception as e:
-		print("Error on saving")
+	def save(self):
+		try:
+			if not os.path.exists("data/"):
+				os.makedirs("data/")
+			with open("data/"+ self.save_name +".pkl","wb") as f:
+				pickle.dump(self.models, f, pickle.HIGHEST_PROTOCOL)
+		except Exception as e:
+			print("Error on saving", e)
 
 
 args_black=\
