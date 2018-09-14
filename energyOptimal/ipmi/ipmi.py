@@ -19,7 +19,7 @@ def ToSigned(Num, signedbitB):
 		return Num
 
 class IPMI:
-	def __init__(self, server):
+	def __init__(self, server, name_="admin", password_="admin"):
 		self.server= server
 		self.formPower= {"POWER_CONSUMPTION.XML":"(0,0)", "time_stamp":"","_":""}
 		self.formSource= {"Get_PSInfoReadings.XML":"(0,0)","time_stamp":"","_":""}
@@ -29,13 +29,16 @@ class IPMI:
 		
 		self.data= []
 		self.conn= False
+		self.name= name_
+		self.password= password_
 
 		self.login()
 
 	def login(self):
 		try:
-			login= requests.post(self.server+"/cgi/login.cgi", data= {"name":"admin","pwd":"admin"})
-			if"SID"in login.cookies.get_dict().keys():
+			login= requests.post(self.server+"/cgi/login.cgi",
+									data= {"name":self.name,"pwd":self.password})
+			if "SID" in login.cookies.get_dict().keys():
 				self.cookies["SID"]= login.cookies.get_dict()["SID"]
 				self.conn= True
 			else:
@@ -104,9 +107,6 @@ class IPMI:
 		
 					sensor_data = (M_data*int(raw_data, 16) + B_data*math.pow(10, Kb_data)) * math.pow(10,Km_data)
 					sensor_now[ps["NAME"]]= sensor_data
-#					print sensor_data
-#					print"\n"
-
 	
 		for child in ipmiP:
 			if child.tag == "NOW":
@@ -123,9 +123,9 @@ class IPMI:
 			return
 		now = datetime.datetime.now()
 		tstamp = time.mktime(now.timetuple())
-		self.formPower["time_stamp"]= self.formSource["time_stamp"] # fix
-		self.formSource["time_stamp"]= self.formSource["time_stamp"]
-		self.formSensors["time_stamp"]= self.formSensors["time_stamp"]
+		self.formPower["time_stamp"]= tstamp
+		self.formSource["time_stamp"]= tstamp
+		self.formSensors["time_stamp"]= tstamp
 		try:
 			rPower = requests.post(self.server+"/cgi/ipmi.cgi", data= self.formPower, cookies= self.cookies)
 			rSource = requests.post(self.server+"/cgi/ipmi.cgi", data= self.formSource, cookies= self.cookies)
@@ -150,10 +150,10 @@ class IPMI:
 			print("Sem dados")
 			return
 		data= self.data[-1]
-		cont= 1
 		print("Potencias")
 		print("Fonte 1", float(data["sources"][0]["dcOutPower"]), "W Fonte 2", float(data["sources"][1]["dcOutPower"]), "W")
 		print("Total",float(data["sources"][0]["dcOutPower"])+ float(data["sources"][1]["dcOutPower"]), "W")
+		
 	def print_data(self):
 		if len(self.data) == 0:
 			print("Sem dados")
