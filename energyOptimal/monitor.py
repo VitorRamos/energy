@@ -102,6 +102,7 @@ class monitorProcess:
         '''
         try:
             self.cpu.reset()
+            time.sleep(idle_time)
             self.cpu.disable_hyperthread()
             self.cpu.set_governors("ondemand")
             cpus = self.cpu.get_online_cpus()
@@ -112,16 +113,19 @@ class monitorProcess:
         for thr in list_threads:
             try:
                 self.cpu.reset()
+                time.sleep(idle_time)
+                self.cpu.disable_hyperthread()
                 self.cpu.set_governors("ondemand")
                 self.cpu.disable_cpu(cpus[thr:])
+                print(cpus[thr:],self.cpu.get_online_cpus())
+                #TODO assert len(online_cpus==thr)
             except Exception as e:
                 print("Unable to control frequency", e)
                 raise(Exception("Unable to control frequency", e))
             info_pcpu = []
             for arg in list_args:
-                arg = map(lambda s: str.replace(s, "_nt_", str(thr)), arg)
+                arg = list(map(lambda s: str.replace(s, "__nt__", str(thr)), arg))
                 print("Argumentos", arg)
-
                 program = subprocess.Popen(["./"+str(self.program_name)]+arg)
                 info_sensor = []
                 ti = time.time()
@@ -130,8 +134,7 @@ class monitorProcess:
                     if verbose > 1:
                         print("Tempo", time.time()-ti, "Frequencia ", freqs, " nThreads", thr)
                     tg = time.time()
-                    info = {"time": time.time()-ti, "freqs": list(freqs),
-                            "sensor": self.sensor.get_data()}
+                    info = {"time": time.time()-ti, "freqs": freqs, "sensor": self.sensor.get_data()}
                     info_sensor.append(info.copy())
                     
                     if verbose > 2:
