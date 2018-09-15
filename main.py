@@ -2,15 +2,18 @@ import pandas as pd
 import numpy as np
 import os
 
-from energyOptimal import plotData, powerModel, performanceModel, energyModel
-from energyOptimal import monitorProcess
+from energyOptimal import plotData
+from energyOptimal.powerModel import powerModel
+from energyOptimal.performanceModel import performanceModel
+from energyOptimal.energyModel import energyModel
+from energyOptimal.monitor import monitorProcess
 
 parsecapps=['completo_black_3.pkl','completo_canneal_2.pkl','completo_dedup_3.pkl',
                     'completo_ferret_3.pkl','completo_fluid_2.pkl','completo_freq.pkl',
                     'completo_rtview_2.pkl','completo_swaptions_1.pkl','completo_vips_3.pkl',
                     'completo_x264_3.pkl','completo_xhpl.pkl','completo_openmc_kernel_novo.pkl']
 parsecapps_argnum= [1, 4, 6, 0, 1, 1, 7, 3, 1, 23, 1, 0]
-warg= 10
+warg= 0
 
 def createPowerModel():
     pw_model= powerModel()
@@ -251,6 +254,6 @@ def monitor_all():
 # createPowerModel()
 # createPerformanceModels()
 # visualizePeformanceModels()
-# energyModels()
+energyModels()
 # energy_pics()
-monitor_all()
+# monitor_all()
