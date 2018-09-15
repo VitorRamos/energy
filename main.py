@@ -222,21 +222,7 @@ def monitor_all():
             ['input4'],\
             ['input5']
     ]
-
-    thr= [1]+[2*x for x in range(1,17)]
-    # monitoring(program_name='openmc', list_threads= , list_args=args_openmc, idle_time= 30, sensor_type= 'ipmi', save_name='completo_openmc')
-    # monitoring(program_name='xhpl.sh',list_threads= [1]+[2*x for x in range(1,17)], list_args=args_xhpl, idle_time= 30, sensor_type= 'ipmi', save_name='completo_xhpl')
-    # monitoring(program_name="canneal",list_threads= [1]+[2*x for x in range(1,17)], list_args= args_canneal, idle_time= 30, sensor_type="ipmi", save_name="completo_canneal")
-    # monitoring(program_name="dedup",list_threads= [1]+[2*x for x in range(1,17)], list_args= args_dedup, idle_time= 30, sensor_type="ipmi", save_name="completo_dedup")
-    # monitoring(program_name="ferret",list_threads= [1]+[2*x for x in range(1,17)], list_args= args_ferret, idle_time= 30, sensor_type="ipmi", save_name="completo_ferret")
-    # monitoring(program_name="vips",list_threads= [1]+[2*x for x in range(1,17)], list_args= args_vips, idle_time= 30, sensor_type="ipmi", save_name="completo_vips")
-    # monitoring(program_name="x264",list_threads= [1]+[2*x for x in range(1,17)], list_args= args_x264, idle_time= 30, sensor_type="ipmi", save_name="completo_x264")
-    # monitoring(program_name="blackscholes",list_threads= [1]+[2*x for x in range(1,17)], list_args= args_black, idle_time= 30, sensor_type="ipmi", save_name="completo_black")
-    # monitoring(program_name="fluidanimate",list_threads= [1,2,4,8,16,32], list_args= args_fluid, idle_time= 30, sensor_type="ipmi", save_name="completo_fluid")
-    # monitoring(program_name="rtview",list_threads= [1]+[2*x for x in range(1,17)], list_args= args_rtview, idle_time= 30, sensor_type="ipmi", save_name="completo_rtview")
-    # monitoring(program_name="swaptions",list_threads= [1]+[2*x for x in range(1,17)], list_args= args_swap, idle_time= 30, sensor_type="ipmi", save_name="completo_swaptions")
-    # monitoring(program_name="freqmine",list_threads= [1]+[2*x for x in range(1,17)], list_args= args_freq, idle_time= 30, sensor_type="ipmi", save_name="completo_freqmine")
-
+    
     programs= [monitorProcess(program_name_= 'openmc', sensor_type_='ipmi'),
                monitorProcess(program_name_= 'xhpl.sh', sensor_type_='ipmi'),
                monitorProcess(program_name_= 'canneal', sensor_type_='ipmi'),
@@ -253,6 +239,10 @@ def monitor_all():
             args_ferret, args_x264, args_vips, args_black, args_fluid, args_swap, args_rtview, args_freq]
     for p, a in zip(programs,args):
         try:
+            if 'fluid' in p.program_name:
+                thr= [1,2,4,8,16,32]
+            else:
+                thr= [1]+list(range(2,33,2))
             p.run_dvfs(list_threads= thr, list_args= a, idle_time= 30,
                         verbose=0, save_name='data/dvfs/{}_completo_2.pkl'.format(p.program_name))
         except Exception as e:
