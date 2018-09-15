@@ -228,3 +228,27 @@ class cpuFreq:
         Get current frequency speed
         '''
         return self.__get_cpu_variable("scaling_cur_freq")
+    
+    def get_driver(self):
+        '''
+        Get current driver
+        '''
+        fpath = path.join("cpu0","cpufreq","scaling_driver")
+        data = self.__read_cpu_file(fpath).rstrip("\n").split()
+        return data
+
+    def get_max_freq(self):
+        '''
+        Get max frequency possible
+        '''
+        fpath = path.join("cpu0","cpufreq","cpuinfo_max_freq")
+        data = self.__read_cpu_file(fpath).rstrip("\n").split()
+        return data
+    
+    def get_min_freq(self):
+        '''
+        Get min frequency possible
+        '''
+        fpath = path.join("cpu0","cpufreq","cpuinfo_min_freq")
+        data = self.__read_cpu_file(fpath).rstrip("\n").split()
+        return data
