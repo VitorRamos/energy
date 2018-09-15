@@ -24,6 +24,9 @@ class monitorProcess:
         self.program_name = program_name_
 
     def run(self, list_threads, list_args, idle_time, save_name, verbose=0):
+        '''
+        TODO
+        '''
         try:
             self.cpu.reset()
             self.cpu.disable_hyperthread()
@@ -94,6 +97,9 @@ class monitorProcess:
         # cpu.set_governors("userspace")
 
     def run_dvfs(self, list_threads, list_args, idle_time, save_name, verbose= 0):
+        '''
+        TODO
+        '''
         try:
             self.cpu.reset()
             self.cpu.disable_hyperthread()
@@ -120,7 +126,7 @@ class monitorProcess:
                 info_sensor = []
                 ti = time.time()
                 while program.poll() == None:
-                    freqs = cpu.get_frequencies()
+                    freqs = self.cpu.get_frequencies()
                     if verbose > 1:
                         print("Tempo", time.time()-ti, "Frequencia ", freqs, " nThreads", thr)
                     tg = time.time()
@@ -158,6 +164,9 @@ class monitorProcess:
         self.cpu.set_governors("ondemand")
 
     def save(self, save_name):
+        '''
+        TODO
+        '''
         try:
             import platform
             from datetime import datetime
@@ -170,12 +179,3 @@ class monitorProcess:
                 pickle.dump(self.models, f, pickle.HIGHEST_PROTOCOL)
         except Exception as e:
             print("Error on saving", e)
-
-
-# args_black= [["_nt_","in_156K.txt","out_156K.txt"],\
-# 	["_nt_","in_312K.txt","out_312K.txt"],\
-# 	["_nt_","in_625K.txt","out_625K.txt"],\
-# 	["_nt_","in_1M.txt","out_1M.txt"],\
-# 	["_nt_","in_2M.txt","out_2M.txt"],\
-# 	["_nt_","in_5M.txt","out_5M.txt"],\
-# 	["_nt_","in_10M.txt","out_10M.txt"]]
