@@ -21,12 +21,15 @@ class monitorProcess:
         self.cpu = cpuFreq()
         self.models = []
         self.header = []
-        self.program_name = program_name_
+        self.program_name = os.path.basename(program_name_)
+        self.program_path = os.path.dirname(program_name_)
 
     def run(self, list_threads, list_args, idle_time, save_name, verbose=0):
         '''
         TODO
         '''
+        current_dir= os.getcwd()
+        os.chdir(self.program_path)
         try:
             self.cpu.reset()
             self.cpu.disable_hyperthread()
@@ -91,7 +94,8 @@ class monitorProcess:
 
             model = {"freq": f, "threads": info_threads}
             self.models.append(model.copy())
-
+        
+        os.chdir(current_dir)
         self.save(save_name)
         self.cpu.reset()
         # cpu.set_governors("userspace")
@@ -100,6 +104,8 @@ class monitorProcess:
         '''
         TODO
         '''
+        current_dir= os.getcwd()
+        os.chdir(self.program_path)
         try:
             self.cpu.reset()
             time.sleep(idle_time)
@@ -117,7 +123,8 @@ class monitorProcess:
                 self.cpu.disable_hyperthread()
                 self.cpu.set_governors("ondemand")
                 self.cpu.disable_cpu(cpus[thr:])
-                print(cpus[thr:],self.cpu.get_online_cpus())
+                if verbose > 0:
+                    print(cpus[thr:], self.cpu.get_online_cpus())
                 #TODO assert len(online_cpus==thr)
             except Exception as e:
                 print("Unable to control frequency", e)
@@ -125,7 +132,8 @@ class monitorProcess:
             info_pcpu = []
             for arg in list_args:
                 arg = list(map(lambda s: str.replace(s, "__nt__", str(thr)), arg))
-                print("Argumentos", arg)
+                if verbose > 0:
+                    print("Argumentos", arg)
                 program = subprocess.Popen(["./"+str(self.program_name)]+arg)
                 info_sensor = []
                 ti = time.time()
@@ -161,6 +169,8 @@ class monitorProcess:
         if verbose > 0:
             print("Saving")
         self.models= info_threads
+           
+        os.chdir(current_dir)
         self.save(save_name)
         
         self.cpu.reset()
