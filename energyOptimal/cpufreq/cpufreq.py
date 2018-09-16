@@ -98,12 +98,17 @@ class cpuFreq:
             fpath = path.join("cpu%i"%cpu,"online")
             self.__write_cpu_file(fpath, b"1")
 
-    def reset(self):
+    def reset(self, rg=None):
         '''
         Enable all offline cpus, and reset max and min frequencies files
+
+        rg: range or list of threads to reset
         '''
-        self.enable_all_cpu()
-        for cpu in self.__get_ranges("online"):
+        if type(rg) == int:
+            rg= [rg]
+        to_reset= rg if rg else self.__get_ranges("present")
+        self.enable_cpu(to_reset)
+        for cpu in to_reset:
             fpath = path.join("cpu%i"%cpu,"cpufreq","cpuinfo_max_freq")
             max_freq = self.__read_cpu_file(fpath)
             fpath = path.join("cpu%i"%cpu,"cpufreq","cpuinfo_min_freq")
