@@ -21,77 +21,79 @@ class monitorProcess:
         self.cpu = cpuFreq()
         self.models = []
         self.header = []
-        self.program_name = program_name_
+        self.program_name = os.path.basename(program_name_)
+        self.program_path = os.path.dirname(program_name_)
 
     def run(self, list_threads, list_args, idle_time, save_name, verbose=0):
         '''
         TODO
         '''
+        current_dir= os.getcwd()
+        os.chdir(self.program_path)
         try:
             self.cpu.reset()
             self.cpu.disable_hyperthread()
             self.cpu.set_governors("userspace")
             freq = self.cpu.get_available_frequencies()
             cpus = self.cpu.get_online_cpus()
-        except Exception as e:
-            raise(Exception("Unable to control cpu", e))
 
-        for f in freq:
-            info_threads = []
-            for thr in list_threads:
-                try:
+            for f in freq:
+                info_threads = []
+                for thr in list_threads:
+                    
                     self.cpu.enable_cpu(cpus)
                     self.cpu.set_governors("userspace")
                     self.cpu.disable_cpu(cpus[thr:])
                     self.cpu.set_frequencies(f)
-                except Exception as e:
-                    print("Unable to control frequency", e)
-                    raise(Exception("Unable to control frequency", e))
 
-                info_pcpu = []
-                for arg in list_args:
-                    info_sensor = []
+                    info_pcpu = []
+                    for arg in list_args:
+                        info_sensor = []
 
-                    arg = list(map(lambda s: str.replace(s, "__nt__", str(thr)), arg))
-                    if verbose > 0:
-                        print("Argumentos", arg)
-
-                    program = subprocess.Popen(["./"+str(self.program_name)]+arg)
-                    ti = time.time()
-                    while program.poll() == None:
+                        arg = list(map(lambda s: str.replace(s, "__nt__", str(thr)), arg))
                         if verbose > 0:
-                            print("Tempo", time.time()-ti,
-                                  "Frequencia ", f, " nThreads", thr)
+                            print("Argumentos", arg)
 
-                        tg = time.time()
-                        info = {"time": time.time()-ti,
-                                "sensor": self.sensor.get_data()}
-                        info_sensor.append(info.copy())
-                        if verbose > 2:
-                            self.sensor.print_data()
-                        elif verbose > 1:
-                            self.sensor.print_pot()
+                        program = subprocess.Popen(["./"+str(self.program_name)]+arg)
+                        ti = time.time()
+                        while program.poll() == None:
+                            if verbose > 0:
+                                print("Tempo", time.time()-ti,
+                                    "Frequencia ", f, " nThreads", thr)
 
-                        tg = time.time()-tg
-#						if 1-tg >= 0:
-#							time.sleep(1-tg)
-                    program.wait()
-                    tt = time.time()-ti
-                    if verbose > 0:
-                        print("Tempo total", tt)
+                            tg = time.time()
+                            info = {"time": time.time()-ti,
+                                    "sensor": self.sensor.get_data()}
+                            info_sensor.append(info.copy())
+                            if verbose > 2:
+                                self.sensor.print_data()
+                            elif verbose > 1:
+                                self.sensor.print_pot()
 
-                    l1 = {"arg": list(arg), "total_time": tt,
-                          self.sensor_type: info_sensor}
-                    info_pcpu.append(l1.copy())
+                            tg = time.time()-tg
+    #						if 1-tg >= 0:
+    #							time.sleep(1-tg)
+                        program.wait()
+                        tt = time.time()-ti
+                        if verbose > 0:
+                            print("Tempo total", tt)
 
-                    time.sleep(idle_time)
+                        l1 = {"arg": list(arg), "total_time": tt,
+                            self.sensor_type: info_sensor}
+                        info_pcpu.append(l1.copy())
 
-                l2 = {"nthread": thr, "lpcpu": info_pcpu}
-                info_threads.append(l2.copy())
+                        time.sleep(idle_time)
 
-            model = {"freq": f, "threads": info_threads}
-            self.models.append(model.copy())
+                    l2 = {"nthread": thr, "lpcpu": info_pcpu}
+                    info_threads.append(l2.copy())
 
+                model = {"freq": f, "threads": info_threads}
+                self.models.append(model.copy())
+
+        except Exception as e:
+            print("Error", e)
+
+        os.chdir(current_dir)
         self.save(save_name)
         self.cpu.reset()
         # cpu.set_governors("userspace")
@@ -100,67 +102,71 @@ class monitorProcess:
         '''
         TODO
         '''
+        current_dir= os.getcwd()
+        os.chdir(self.program_path)
         try:
             self.cpu.reset()
             time.sleep(idle_time)
             self.cpu.disable_hyperthread()
             self.cpu.set_governors("ondemand")
             cpus = self.cpu.get_online_cpus()
-        except Exception as e:
-            raise(Exception("Unable to control cpu", e))
 
-        info_threads = []
-        for thr in list_threads:
-            try:
+            info_threads = []
+            for thr in list_threads:
                 self.cpu.reset()
                 time.sleep(idle_time)
                 self.cpu.disable_hyperthread()
                 self.cpu.set_governors("ondemand")
                 self.cpu.disable_cpu(cpus[thr:])
-                print(cpus[thr:],self.cpu.get_online_cpus())
-                #TODO assert len(online_cpus==thr)
-            except Exception as e:
-                print("Unable to control frequency", e)
-                raise(Exception("Unable to control frequency", e))
-            info_pcpu = []
-            for arg in list_args:
-                arg = list(map(lambda s: str.replace(s, "__nt__", str(thr)), arg))
-                print("Argumentos", arg)
-                program = subprocess.Popen(["./"+str(self.program_name)]+arg)
-                info_sensor = []
-                ti = time.time()
-                while program.poll() == None:
-                    freqs = self.cpu.get_frequencies()
-                    if verbose > 1:
-                        print("Tempo", time.time()-ti, "Frequencia ", freqs, " nThreads", thr)
-                    tg = time.time()
-                    info = {"time": time.time()-ti, "freqs": freqs, "sensor": self.sensor.get_data()}
-                    info_sensor.append(info.copy())
-                    
-                    if verbose > 2:
-                        self.sensor.print_data()
-                    elif verbose > 1:
-                        self.sensor.print_pot()
-
-                    tg = time.time()-tg
-                    if 1-tg >= 0:
-                        time.sleep(1-tg)
-
-                program.wait()
-                tt = time.time()-ti
                 if verbose > 0:
-                    print("Tempo total", tt)
+                    print(cpus[thr:], self.cpu.get_online_cpus())
+                #TODO assert len(online_cpus==thr)
 
-                l1 = {"arg": list(arg), "total_time": tt, self.sensor_type: info_sensor}
-                info_pcpu.append(l1.copy())
-                time.sleep(idle_time)
+                info_pcpu = []
+                for arg in list_args:
+                    arg = list(map(lambda s: str.replace(s, "__nt__", str(thr)), arg))
+                    if verbose > 0:
+                        print("Argumentos", arg)
+                    program = subprocess.Popen(["./"+str(self.program_name)]+arg)
+                    info_sensor = []
+                    ti = time.time()
+                    while program.poll() == None:
+                        freqs = self.cpu.get_frequencies()
+                        if verbose > 1:
+                            print("Tempo", time.time()-ti, "Frequencia ", freqs, " nThreads", thr)
+                        tg = time.time()
+                        info = {"time": time.time()-ti, "freqs": freqs, "sensor": self.sensor.get_data()}
+                        info_sensor.append(info.copy())
+                        
+                        if verbose > 2:
+                            self.sensor.print_data()
+                        elif verbose > 1:
+                            self.sensor.print_pot()
 
-            l2 = {"nthread": thr, "lpcpu": info_pcpu}
-            info_threads.append(l2.copy())
+                        tg = time.time()-tg
+                        if 1-tg >= 0:
+                            time.sleep(1-tg)
+
+                    program.wait()
+                    tt = time.time()-ti
+                    if verbose > 0:
+                        print("Tempo total", tt)
+
+                    l1 = {"arg": list(arg), "total_time": tt, self.sensor_type: info_sensor}
+                    info_pcpu.append(l1.copy())
+                    time.sleep(idle_time)
+
+                l2 = {"nthread": thr, "lpcpu": info_pcpu}
+                info_threads.append(l2.copy())
+
+        except Exception as e:
+            print("Error", e)
 
         if verbose > 0:
             print("Saving")
         self.models= info_threads
+           
+        os.chdir(current_dir)
         self.save(save_name)
         
         self.cpu.reset()
