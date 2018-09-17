@@ -75,7 +75,7 @@ class powerModel:
             self.frequencies.append(freq)
             for thr in d['threads']:
                 if len(thrs_filter) > 0 and thr['nthreads'] not in thrs_filter: continue
-                for pcpu in thr['lpcpu'][0:1]:
+                for pcpu in thr['lpcpu'][0:1]: #TODO choose wich argument 
                     pw = 0
                     sensors_dict= {}
 
