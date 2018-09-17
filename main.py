@@ -35,7 +35,7 @@ def createPowerModel():
 
 def createPerformanceModels():
     for l,idx in zip(parsecapps,parsecapps_argnum):
-        if l.endswith('pkl') and 'swap' in l:
+        if l.endswith('pkl'):
             en_model= performanceModel()
             df= en_model.loadData(filename='data/performance_model/'+l, arg_num=idx, verbose=0,
                                                     createDataFrame=True, method='constTime',
@@ -254,6 +254,6 @@ def monitor_all():
 # createPowerModel()
 # createPerformanceModels()
 # visualizePeformanceModels()
-energyModels()
+# energyModels()
 # energy_pics()
 # monitor_all()
