@@ -17,11 +17,17 @@ class powerModel:
         ret1 = []
         ret2 = []
         for t in ipmi:
-            ret1.append(t['sources'][0][name])
-            ret2.append(t['sources'][1][name])
+            if 'sensor' in t.keys():
+                ret1.append(t['sensor']['sources'][0][name])
+                ret2.append(t['sensor']['sources'][1][name])
+            else:
+                ret1.append(t['sources'][0][name])
+                ret2.append(t['sources'][1][name])
         ret1 = np.sort(ret1)  # median
         ret2 = np.sort(ret2)
-        return ret1[20:-20], ret2[20:-20] 
+        if len(ret1) > 40:
+            return ret1[20:-20], ret2[20:-20]
+        return ret1, ret2
     
     def getVectorRAPL(self, rapl):
         ret = []
@@ -69,7 +75,7 @@ class powerModel:
             self.frequencies.append(freq)
             for thr in d['threads']:
                 if len(thrs_filter) > 0 and thr['nthreads'] not in thrs_filter: continue
-                for pcpu in thr['lpcpu']:
+                for pcpu in thr['lpcpu'][0:1]:
                     pw = 0
                     sensors_dict= {}
 
@@ -121,7 +127,6 @@ class powerModel:
                     
                     self.sensors.append(sensors_dict)
                     self.powers.append(pw)
-
         return self.frequencies, self.threads, self.powers, self.sensors
 
     def fit(self, verbose= 0):
