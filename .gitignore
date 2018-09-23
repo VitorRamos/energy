@@ -2,5 +2,8 @@ venv/
 data/
 fotos/
 .vscode/
-energyOptimal/__pycache__
+build/
+dist/
+energyOptimal.egg-info/
 *.pyc
+energyOptimal/__pycache__
