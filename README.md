@@ -3,6 +3,7 @@
 ## Table of contents
 
 - [Description](#description)
+- [Installation](#install)
 - [Monitor script](#monitor)
 - [Power Model](#power)
 - [Performance Model](#performacne)
@@ -14,6 +15,18 @@
 ## Description
 
 ...
+
+<a name="install"/>
+
+## Installation
+
+```
+virtual env -p python3 venv
+source venv/bin/activate
+pip install -r requeriments.txt
+python setup.py install
+python examples/monitor.py
+```
 
 <a name="monitor"/>
 
