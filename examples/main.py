@@ -15,7 +15,6 @@ parsecapps=['completo_black_3.pkl','completo_canneal_2.pkl','completo_dedup_3.pk
 parsecapps_argnum= [1, 4, 6, 0, 1, 1, 7, 3, 1, 23, 1, 0]
 warg= 0
 
-
 def energy_pics():
     titles=['Blackscholes','Canneal','Dedup', 'Ferret','Fluidanimate','Freqmine',
                     'Raytrace','Swaptions','Vips',
@@ -38,3 +37,22 @@ def energy_pics():
                         z=df_pred_['energy'].values/1e3,points=False,legend='Model')
         plotData.ax.view_init(30,60)
         plotData.savePlot('fotos/'+app+'.png',showLegend=True)
+
+parsecapps=['completo_black_3.pkl','completo_canneal_2.pkl','completo_dedup_3.pkl',
+                    'completo_ferret_3.pkl','completo_fluid_2.pkl','completo_freq.pkl',
+                    'completo_rtview_2.pkl','completo_swaptions_1.pkl','completo_vips_3.pkl',
+                    'completo_x264_3.pkl']
+parsecapps_argnum= [1, 4, 6, 0, 1, 1, 7, 3, 1, 23]
+
+for app in parsecapps:
+    pw_model= powerModel('data/ipmi_2-32_cpuload.pw')
+    perf_model= performanceModel('data/dataframes/'+app, 'data/svr/'+app)
+    en_model= energyModel(pw_model,perf_model,freq_range_=np.arange(1.2e6,2.3e6,0.1e6)/1e6)
+    df1= perf_model.dataFrame[['in_cat','freq','thr','energy']]
+    df1.columns= ['in','freq','thr','energy_x']
+    df2= en_model.minimalEnergy()[['in','freq','thr','energy']]
+    df2.columns= ['in','freq','thr','energy_y']
+    df= pd.merge(df1,df2)
+    df=df.sort_values(['in','freq','thr'])
+    print(app)
+    print(df['energy_x'].sum()/1e3)

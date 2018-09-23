@@ -5,7 +5,15 @@ from energyOptimal.energyModel import energyModel
 import numpy as np
 import pandas as pd
 
-program= 'completo_black_3.pkl'
+titles=['Blackscholes','Canneal','Dedup', 'Ferret','Fluidanimate','Freqmine',
+                    'Raytrace','Swaptions','Vips',
+                    'x264','HPL','Openmc']
+parsecapps=['completo_black_3.pkl','completo_canneal_2.pkl','completo_dedup_3.pkl',
+                    'completo_ferret_3.pkl','completo_fluid_2.pkl','completo_freq.pkl',
+                    'completo_rtview_2.pkl','completo_swaptions_1.pkl','completo_vips_3.pkl',
+                    'completo_x264_3.pkl','completo_xhpl.pkl','completo_openmc_kernel_novo.pkl']
+
+program= 'completo_openmc_kernel_novo.pkl'
 
 pw_model= powerModel('data/ipmi_2-32_cpuload.pw')
 perf_model= performanceModel('data/dataframes/'+program, 'data/svr/'+program)
@@ -20,9 +28,14 @@ print(en_model.minimalEnergy())
 def update_data(val):
     d= int(val)
     plotData.setProps(xlabel='Frequencies (GHz)', ylabel='Active threads',
-                        zlabel='Time (s)', title=program)
+                        zlabel='Energy (KJ)', title=titles[parsecapps.index(program)])
     df_pred_= df_pred[df_pred['in']==d]
     df_= df[df['in_cat']==d]
+
+    df_pred_= df_pred_[df_pred_['thr'].isin(list(range(8,33,2)))]
+    df_= df_[df_['thr'].isin(list(range(8,33,2)))]
+    plotData.ax.view_init(30,60)
+
     if not df_.empty:
         plotData.plot3D(x=df_['freq'].unique(),y=df_['thr'].unique(),
                                         z=df_['time'].values/1e3,points=True,legend='Measurements')
