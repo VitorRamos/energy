@@ -1,5 +1,6 @@
 from energyOptimal.performanceModel import performanceModel
 from energyOptimal import plotData
+import numpy as np
 
 parsecapps=['completo_black_3.pkl','completo_canneal_2.pkl','completo_dedup_3.pkl',
                     'completo_ferret_3.pkl','completo_fluid_2.pkl','completo_freq.pkl',
@@ -11,7 +12,7 @@ parsecapps_argnum= [1, 4, 6, 0, 1, 1, 7, 3, 1, 23, 1, 0]
 def createPerformanceModels():
     for p,idx in zip(parsecapps,parsecapps_argnum):
         en_model= performanceModel()
-        df= en_model.loadData(filename='data/performance_model/'+p, arg_num=idx, verbose=1,
+        df= en_model.loadData(filename='data/performance_model/'+p, arg_num=idx, verbose=0,
                                                 createDataFrame=True, method='constTime',
                                                 freqs_filter=list(range(1200000,2300000,100000)))
 
@@ -55,5 +56,5 @@ def visualizePeformanceModels(program):
 
     plotData.plotShow()
 
-createPerformanceModels()
+# createPerformanceModels()
 visualizePeformanceModels(parsecapps[0])
