@@ -17,15 +17,22 @@ parsec_dvfs=['blackscholes_completo_3.pkl', 'canneal_completo_3.pkl', 'dedup_com
              'rtview_completo_3.pkl', 'swaptions_completo_3.pkl', 'vips_completo_3.pkl',
              'x264_completo_3.pkl', 'xhpl_completo_3.pkl', 'openmc_completo_3.pkl']
 
+titles=['Blackscholes','Canneal','Dedup',
+        'Ferret','Fluidanimate','Freqmine',
+        'Raytrace','Swaptions','Vips',
+        'x264','HPL','Openmc']
+
 parsecapps_argnum= [1, 4, 6, 0, 1, 1, 7, 3, 1, 23, 1, 0]
 wapp= 0
 plt.style.use('seaborn')
 
 def ondemand32_comp():
     row= []
-    for dvfs, model, arg in zip(parsec_dvfs,parsec_models,parsecapps_argnum):
+    for title, dvfs, model, arg in zip(titles,parsec_dvfs,parsec_models,parsecapps_argnum):
         if 'freq' in model:
             continue
+        # if not 'vips' in model:
+        #     continue
         ondemand= dvfsModel()
         ondemand.loadData(filename= 'data/dvfs/ondemand/'+dvfs, arg_num= arg, method='constTime')
         pw_model= powerModel('data/ipmi_2-32_cpuload.pw')
@@ -43,20 +50,21 @@ def ondemand32_comp():
         df= pd.merge(ond[['in_cat','energy_ondemand','time_ondemand']],df)
         df= df.rename(columns={'energy':'energy_real'})
 
-        df['saving_energy']= (df['energy_real']-df['energy_ondemand'])/df['energy_ondemand']*100
-        df['saving_time']= (df['time']-df['time_ondemand'])/df['time_ondemand']*100
+        df['saving_energy']= (df['energy_real']-df['energy_ondemand'])/df['energy_real']*100
+        df['saving_time']= (df['time']-df['time_ondemand'])/df['time']*100
+        
+        # print(df)
+        row.append([model.split('_')[1], df['saving_energy'].mean(), df['saving_time'].mean(), perf_model.dataFrame.energy.sum()])
 
-        df= df[['in','energy_ondemand','energy_real']]
-        df=df.set_index('in')
+        df= df[['in_cat','energy_ondemand','energy_real']]
+        df=df.set_index('in_cat')
         df.plot.bar(width=0.8)
         plt.xlabel('Inputs')
         plt.ylabel('Energy (J)')
-        plt.title(dvfs)
+        plt.title(title)
         plt.tight_layout()
-        print('fotos/comp'+dvfs+'.png')
+        # print('fotos/comp'+dvfs+'.png')
         plt.savefig('fotos/comp/'+dvfs+'.png')
-
-        row.append([model.split('_')[1], df.saving_energy.mean(), df.saving_time.mean(), perf_model.dataFrame.energy.sum()])
 
     df= pd.DataFrame(row,columns=['Program','Saving_mean', 'Saving_time', 'Total_train'])
     df= df.sort_values('Saving_mean')
@@ -64,9 +72,12 @@ def ondemand32_comp():
     print(df)
 
 def relative_comp():
-    for dvfs, model, arg in zip(parsec_dvfs,parsec_models,parsecapps_argnum):
+    row=[]
+    for title,dvfs, model, arg in zip(titles,parsec_dvfs,parsec_models,parsecapps_argnum):
         if 'freq' in model:
             continue
+        # if not 'vips' in model:
+        #     continue
         ondemand= dvfsModel()
         ondemand.loadData(filename= 'data/dvfs/ondemand/'+dvfs, arg_num= arg, method='constTime')
         pw_model= powerModel('data/ipmi_2-32_cpuload.pw')
@@ -80,14 +91,27 @@ def relative_comp():
         df= en_model.realMinimalEnergy().sort_values('in_cat')['energy']
         df= pd.concat([df]*nthreads,axis=1)
         ond= pd.DataFrame(ond.values/df.values,columns=ond.columns)
-
-        ond.plot.bar()
-        plt.plot([-1,6],[1,1], '--',color='k',label='proposto')
-        plt.title(dvfs)
-        plt.tight_layout()
-        plt.show()
-        plt.savefig('fotos/comp2/%s.png'%dvfs)
         
+        row.append([dvfs, ond.max(axis=1).mean(), ond.mean(axis=1).mean(),ond[32].mean(), ond.min(axis=1).mean()])
+        ond.plot.bar(figsize=(12,7))
+        plt.plot([-1,6],[1,1], '--',color='k',label='proposed')
+        plt.plot([-1,6],[ond.mean().mean(),ond.mean().mean()], ':',color='k',label='average gain')
+        plt.xlabel('Inputs')
+        plt.ylabel('Energy relative')
+        plt.title(title)
+        plt.legend(loc='center right',bbox_to_anchor=(1.15,0.6))
+        plt.tight_layout()
+        plt.savefig('fotos/comp2/%s.png'%dvfs)
+        # plt.show()
+        # exit(0)
+
+    df= pd.DataFrame(row,columns=['app','max','mean','32','min'])
+    df[['max','mean','32','min']]-=1
+    df[['max','mean','32','min']]*=100
+    df= df.sort_values('32',ascending=False)
+    df.to_csv('geral_table.csv')
+    print(df)
+
 
 # ondemand32_comp()
 relative_comp()
