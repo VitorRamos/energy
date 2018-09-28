@@ -127,6 +127,7 @@ class powerModel:
                     
                     self.sensors.append(sensors_dict)
                     self.powers.append(pw)
+                    
         return self.frequencies, self.threads, self.powers, self.sensors
 
     def fit(self, verbose= 0):

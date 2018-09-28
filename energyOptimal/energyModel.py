@@ -29,13 +29,17 @@ class energyModel:
     def createDataframe(self):
         self.dataFrame= pd.DataFrame(np.array(np.meshgrid(self.freq_range,
                                         self.thr_range,self.inputs_range)).T.reshape(-1,3),
-                                        columns=['freq', 'thr', 'in'])
-        self.dataFrame['time']= self.performace_model.estimate(self.dataFrame[['freq','thr','in']])
+                                        columns=['freq', 'thr', 'in_cat'])
+        self.dataFrame['time']= self.performace_model.estimate(self.dataFrame[['freq','thr','in_cat']])
         self.dataFrame['pw']= np.tile(self.power_model.estimate(self.freq_range,self.thr_range), 
                                                         len(self.inputs_range))
-        self.dataFrame['energy']= self.dataFrame['time']*self.dataFrame['pw']
+        self.dataFrame['energy_model']= self.dataFrame['time']*self.dataFrame['pw']
         return self.dataFrame
     
     def minimalEnergy(self):
-        return self.dataFrame[self.dataFrame.energy.isin( self.dataFrame.groupby('in').energy.min() )]
+        return self.dataFrame[self.dataFrame.energy_model.isin( self.dataFrame.groupby('in_cat').energy_model.min() )]
     
+    def realMinimalEnergy(self):
+        df= self.minimalEnergy()[['in_cat','thr','freq','energy_model']]
+        df= pd.merge(df,self.performace_model.dataFrame[['in_cat','thr','freq','time','energy']])
+        return df

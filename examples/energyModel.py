@@ -13,7 +13,7 @@ parsecapps=['completo_black_3.pkl','completo_canneal_2.pkl','completo_dedup_3.pk
                     'completo_rtview_2.pkl','completo_swaptions_1.pkl','completo_vips_1.pkl',
                     'completo_x264_1.pkl','completo_xhpl.pkl','completo_openmc_kernel_novo.pkl']
 
-program= 'completo_x264_1.pkl'
+program= 'completo_xhpl.pkl'
 
 pw_model= powerModel('data/ipmi_2-32_cpuload.pw')
 perf_model= performanceModel('data/dataframes/'+program, 'data/svr/'+program)
@@ -29,7 +29,7 @@ def update_data(val):
     d= int(val)
     plotData.setProps(xlabel='Frequencies (GHz)', ylabel='Active threads',
                         zlabel='Energy (KJ)', title=titles[parsecapps.index(program)])
-    df_pred_= df_pred[df_pred['in']==d]
+    df_pred_= df_pred[df_pred['in_cat']==d]
     df_= df[df['in_cat']==d]
 
     df_pred_= df_pred_[df_pred_['thr'].isin(list(range(8,33,2)))]
@@ -40,8 +40,8 @@ def update_data(val):
         plotData.plot3D(x=df_['freq'].unique(),y=df_['thr'].unique(),
                                         z=df_['energy'].values/1e3,points=True,legend='Measurements')
     plotData.plot3D(x=df_pred_['freq'].unique(),y=df_pred_['thr'].unique(),
-                                        z=df_pred_['energy'].values/1e3,points=False,legend='Model')
+                                        z=df_pred_['energy_model'].values/1e3,points=False,legend='Model')
     # plotData.ax.set_zlim(1,6)
 plotData.update_user= update_data
-plotData.createSlider(label_='in',valmin_=df_pred['in'].min(),valmax_=df_pred['in'].max())
+plotData.createSlider(label_='in',valmin_=df_pred['in_cat'].min(),valmax_=df_pred['in_cat'].max())
 plotData.plotShow(showLegend=True)

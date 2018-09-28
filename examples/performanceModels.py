@@ -67,8 +67,8 @@ titles=['Blackscholes','Canneal','Dedup', 'Ferret','Fluidanimate','Freqmine',
 parsecapps=['completo_black_3.pkl','completo_canneal_2.pkl','completo_dedup_3.pkl',
                     'completo_ferret_3.pkl','completo_fluid_2.pkl','completo_freq.pkl',
                     'completo_rtview_3.pkl','completo_swaptions_2.pkl','completo_vips_3.pkl',
-                    'completo_x264_2.pkl','completo_xhpl.pkl','completo_openmc_kernel_novo.pkl']
+                    'completo_x264_1.pkl','completo_xhpl.pkl','completo_openmc_kernel_novo.pkl']
 parsecapps_argnum= [1, 4, 6, 0, 1, 1, 7, 3, 1, 23, 1, 0]
 
-createPerformanceModels(parsecapps[n])
+# createPerformanceModels(parsecapps[n])
 visualizePeformanceModels(parsecapps[n], titles[n])

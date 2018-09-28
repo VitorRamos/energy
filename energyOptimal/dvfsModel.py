@@ -36,12 +36,12 @@ class dvfsModel:
                     df.append([thr['nthread'], lpcpu['arg'][arg_num],
                               lpcpu['total_time'], pw.mean()] + row)
 
-        self.dataFrame = pd.DataFrame(
-            df, columns=['thr', 'in', 'time', 'pw'] + ['cpu%i' % x for x in range(0, 32)])
+        self.dataFrame = pd.DataFrame(df,
+                    columns=['thr', 'in', 'time', 'pw'] + ['cpu%i' % x for x in range(0, 32)])
 
         if method == 'constTime':
             self.dataFrame = self.dataFrame.sort_values(['thr', 'in', 'time'])
-            self.dataFrame[['cpu%i' % x for x in range(0, 32)]] =
+            self.dataFrame[['cpu%i' % x for x in range(0, 32)]] = \
                             self.dataFrame[['cpu%i' % x for x in range(0, 32)]].astype(float)
             freqs = pd.DataFrame(self.dataFrame.groupby(['thr', 'in']).mean().reset_index())
             freqs['time'] = self.dataFrame.groupby(['thr', 'in']).tail(1)['time'].values
