@@ -43,49 +43,25 @@ def ondemand32_comp():
         df= pd.merge(ond[['in_cat','energy_ondemand','time_ondemand']],df)
         df= df.rename(columns={'energy':'energy_real'})
 
-        # df= ondemand.dataFrame
-        # df= df[df['thr'] == 32][['in','time','energy']]
-        # df.columns= ['in','time_ondemand','energy_ondemand']
-        # df= pd.merge(df, perf_model.dataFrame[['in','in_cat','freq','thr','energy','time']])
-        # df= df[['in_cat','freq','thr','energy','energy_ondemand','time','time_ondemand']]
-        # df.columns= ['in_cat','freq','thr','energy_real','energy_ondemand','time','time_ondemand']
-        # df1= en_model.minimalEnergy()[['in_cat','freq','thr','energy_model']]
-        # df= pd.merge(df,df1)
-        # df=df.sort_values(['in_cat','freq','thr'])
         df['saving_energy']= (df['energy_real']-df['energy_ondemand'])/df['energy_ondemand']*100
         df['saving_time']= (df['time']-df['time_ondemand'])/df['time_ondemand']*100
-        # print(df)
 
-        # df= df[['in','energy_ondemand','energy_real']]
-        # df=df.set_index('in')
-        # df.plot.bar(width=0.8)
-        # plt.xlabel('Inputs')
-        # plt.ylabel('Energy (J)')
-        # plt.title(dvfs)
-        # plt.tight_layout()
-        # print('fotos/comp'+dvfs+'.png')
-        # plt.savefig('fotos/comp/'+dvfs+'.png')
+        df= df[['in','energy_ondemand','energy_real']]
+        df=df.set_index('in')
+        df.plot.bar(width=0.8)
+        plt.xlabel('Inputs')
+        plt.ylabel('Energy (J)')
+        plt.title(dvfs)
+        plt.tight_layout()
+        print('fotos/comp'+dvfs+'.png')
+        plt.savefig('fotos/comp/'+dvfs+'.png')
 
-        # x3= pd.crosstab(df['in'],df['thr'],values=df['energy_real'],aggfunc=min)
-        # print(x3)
-        # plot_side_by_side_comp(df_model= en_model.dataFrame, df_ondemand= df_ond, thrs=[32], title=dvfs)
-        # plt.show()
-        
-
-        # print(model)
-        # print(df.mean()['saving_energy'], df.mean()['saving_time'])
         row.append([model.split('_')[1], df.saving_energy.mean(), df.saving_time.mean(), perf_model.dataFrame.energy.sum()])
 
     df= pd.DataFrame(row,columns=['Program','Saving_mean', 'Saving_time', 'Total_train'])
     df= df.sort_values('Saving_mean')
-    print(df)
-    # df['Energy_saving']= (df['Energy(J)']-df['Ondemand(J)'])/df['Ondemand(J)']*100
-    # df['Time_saving']= (df['Time(s)']-df['Ondemand(s)'])/df['Ondemand(s)']*100
-    # df['Start_comp']= -df['Total_train']/(df['Energy_saving']/100.0*df['Energy(J)'])
-    # df= df.sort_values('Energy_saving')
     df.to_csv('table.csv')
-    # print(df)
-    # print(df['Energy_saving'].mean(), df['Start_comp'].mean())
+    print(df)
 
 def relative_comp():
     for dvfs, model, arg in zip(parsec_dvfs,parsec_models,parsecapps_argnum):
@@ -113,8 +89,8 @@ def relative_comp():
         plt.savefig('fotos/comp2/%s.png'%dvfs)
         
 
-ondemand32_comp()
-
+# ondemand32_comp()
+relative_comp()
 # def avg_ondemand(onds, arg):
 #     ond= dvfsModel()
 #     ond.loadData(filename= 'data/dvfs/ondemand/'+onds[0], arg_num= arg, method='constTime')
