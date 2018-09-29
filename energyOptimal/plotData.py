@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.widgets import Slider
+from matplotlib.ticker import FormatStrFormatter
 
 fig = plt.figure()
 ax = fig.gca(projection='3d')
@@ -38,7 +39,6 @@ def createSlider(label_, valmin_, valmax_):
     sin.on_changed(update_data)
     update_data(valmin_)
 
-
 def plot3D(x, y, z, legend='', points=True):
     z= np.reshape(z, (len(x), len(y)))
     X = np.arange(0, len(x), 1)
@@ -51,12 +51,14 @@ def plot3D(x, y, z, legend='', points=True):
         ax.scatter(X, Y, Z, antialiased=True, color='b')
     else:
         ax.plot_wireframe(X, Y, Z, antialiased=True, color='black')
-    
-    ax.set_xticks(x[::2])#np.arange(0, len(x), 2))
-    ax.set_xticklabels(x[::2], fontsize=10)
 
+    ax.xaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+    ax.set_xticks(x[::2])#np.arange(0, len(x), 2))
+    # ax.set_xticklabels(x[::2], fontsize=10)
+
+    ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
     ax.set_yticks(y[::2])#np.arange(0, len(y), 2))
-    ax.set_yticklabels(y[::2], fontsize=10)
+    # ax.set_yticklabels(y[::2], fontsize=10)
 
     if legend:
         legends.append(legend)
