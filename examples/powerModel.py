@@ -1,26 +1,59 @@
 from energyOptimal import plotData
 from energyOptimal.powerModel import powerModel
 
-def createPowerModel():
+import argparse
+import numpy as np
+
+parser= argparse.ArgumentParser(description='Create and visualize power model from monitor data')
+parser.add_argument('--create',type=str,help='Create power model',nargs=2,metavar=('data','power_model'))
+parser.add_argument('--show',type=str,help='Show power model')
+parser.add_argument('--freqs',type=str,help='Frequency range', default='1.2,2.3,0.1',nargs='?')
+parser.add_argument('--thrs',type=str,help='Threads range', default='',nargs='?')
+args= parser.parse_args()
+
+def get_range(str_range):
+    _range=[]
+    if not str_range:
+        return _range
+    for r in str_range.split(';'):
+        sr= r.split(',')
+        if len(sr) >= 2:
+            start= float(sr[0])
+            stop= float(sr[1])
+            if len(sr) == 3:
+                step= float(sr[2])
+            else:
+                step= 1.0
+            _range+= list(np.arange(start,stop,step))
+        elif len(sr) > 0:
+            _range+= list([float(sr[0])])
+    return _range
+
+def createPowerModel(path, save_model):
     pw_model= powerModel()
-    pw_model.loadData(filename='data/power_model/ipmi_2-32_cpuload.pkl',verbose=0,load_sensors=False,
-                        freqs_filter=list(range(1200000,2300000,100000)))
+    pw_model.loadData(filename=path, verbose=0, load_sensors=False, freqs_filter=get_range(args.freqs), 
+                                                                    thrs_filter= get_range(args.thrs))
     pw_model.fit()
-    pw_model.save('data/ipmi_2-32_cpuload.pw')
+    pw_model.save(save_model)
     error= pw_model.error()
     print("Power model constants, ", pw_model.power_model_x)
     print("Erro, ", error)
 
     return pw_model
 
-def visualizePowerModel(pw_model):
+def visualizePowerModel(path):
     # Plot the measured values and the model
-    est= pw_model.estimate(pw_model.frequencies, pw_model.threads)
+    pw_model = powerModel(path)
+    freqs= get_range(args.freqs) if args.freqs else pw_model.frequencies
+    thrs= get_range(args.thrs) if args.thrs else pw_model.threads
+    est= pw_model.estimate(freqs, thrs)
     plotData.setProps(xlabel= "Frequencies (GHz)", ylabel= "Active Cores", zlabel= "Power (W)")
     plotData.plot3D(x=pw_model.frequencies, y=pw_model.threads, z=pw_model.powers, legend='Measurements')
-    plotData.plot3D(x=pw_model.frequencies, y=pw_model.threads, z=est, points=False, legend='Model')
-    plotData.savePlot(filename= 'pw_model.png', showLegend= True)
+    plotData.plot3D(x=freqs, y=thrs, z=est, points=False, legend='Model')
     plotData.plotShow(showLegend= True)
+    # plotData.savePlot(filename= 'pw_model.png', showLegend= True)
 
-pw_model= createPowerModel()
-visualizePowerModel(pw_model)
+if args.create:
+    createPowerModel(*args.create)
+elif args.show:
+    visualizePowerModel(args.show)
