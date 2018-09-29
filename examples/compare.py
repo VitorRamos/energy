@@ -2,6 +2,7 @@ from energyOptimal.dvfsModel import dvfsModel
 from energyOptimal.powerModel import powerModel
 from energyOptimal.performanceModel import performanceModel
 from energyOptimal.energyModel import energyModel
+
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
@@ -68,7 +69,7 @@ def ondemand32_comp():
 
     df= pd.DataFrame(row,columns=['Program','Saving_mean', 'Saving_time', 'Total_train'])
     df= df.sort_values('Saving_mean')
-    df.to_csv('table.csv')
+    df.to_csv('tables/table.csv')
     print(df)
 
 def relative_comp():
@@ -109,12 +110,13 @@ def relative_comp():
     df[['max','mean','32','min']]-=1
     df[['max','mean','32','min']]*=100
     df= df.sort_values('32',ascending=False)
-    df.to_csv('geral_table.csv')
+    df.to_csv('tables/geral_table.csv')
     print(df)
 
 
 # ondemand32_comp()
 relative_comp()
+
 # def avg_ondemand(onds, arg):
 #     ond= dvfsModel()
 #     ond.loadData(filename= 'data/dvfs/ondemand/'+onds[0], arg_num= arg, method='constTime')
