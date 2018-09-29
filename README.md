@@ -25,7 +25,6 @@ virtual env -p python3 venv
 source venv/bin/activate
 pip install -r requeriments.txt
 python setup.py install
-python examples/monitor.py
 ```
 
 <a name="monitor"/>
@@ -40,8 +39,13 @@ try:
     process= monitorProcess(program_name_= 'example/program.elf', sensor_type_='ipmi')
     args= [['arg1','arg2'],['arg3','arg4'],...]
     thrs= [1]+list(range(2,33,2))
+
     process.run_dvfs(list_threads= thrs, list_args= args, idle_time= 30,
     verbose=2, save_name='dvfs/{}_complet.pkl'.format(p.program_name))
+
+    # Power and Performance model
+    process.run(list_threads= thrs, list_args= args, idle_time= 30,
+    verbose=2, save_name='performance/{}_complet.pkl'.format(p.program_name))
 except KeyboardInterrupt:
     cpu= cpuFreq()
     cpu.reset()
@@ -58,8 +62,7 @@ from energyOptimal.powerModel import powerModel
 
 pw_model= powerModel()
 # Fit power model
-pw_model.loadData(filename='power_model/ipmi_2-32_cpuload.pkl',verbose=0,load_sensors=False,
-                    freqs_filter=np.arange(1200000,2300000,100000))
+pw_model.loadData(filename='power_model/ipmi_2-32_cpuload.pkl',load_sensors=False)
 pw_model.fit()
 pw_model.save('ipmi_2-32_cpuload.pw')
 # Load power model
@@ -80,9 +83,7 @@ from energyOptimal.performanceModel import performanceModel
 
 en_model= performanceModel()
 # Fit model
-df= en_model.loadData(filename='performance_model/program.pkl', arg_num=idx, verbose=0,
-                                        createDataFrame=True, method='constTime',
-                                        freqs_filter=np.arange(1200000,2300000,100000))
+df= en_model.loadData(filename='performance_model/program.pkl', arg_num=idx)
 en_model.fit(C_=10e3,gamma_=0.1)
 scores= en_model.crossValidate(method='mpe')
 print("CrossValidation ", np.mean(scores)*100, scores)
@@ -103,14 +104,11 @@ preds= en_model.estimate(df[['freq', 'thr', 'in_cat']].values)
 ## Energy Model
 
 ```
-import numpy as np
 from energyOptimal.energyModel import energyModel
 
 pw_model= powerModel('data/ipmi_2-32_cpuload.pw')
 perf_model= performanceModel('dataframes/program', 'svr/program')
-en_model= energyModel(pw_model,perf_model,
-                        thr_range_= np.hstack(([1],np.arange(2,33,2))),
-                        freq_range_= np.arange(1.2e6,2.3e6,0.1e6)/1e6))
+en_model= energyModel(pw_model,perf_model)
 
 print(en_model.minimalEnergy())
 ```

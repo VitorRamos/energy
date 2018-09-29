@@ -137,7 +137,7 @@ class performanceModel:
         '''
         filename: string
         arg_num: argument that contains the problem size
-        verbose: number, level of verbose mode #TODO
+        verbose: number, level of verbose mode
         method: string
             constTime : Average the power samples to estimate energy,
                         this assume the interval between samples are constant
@@ -191,7 +191,7 @@ class performanceModel:
 
                     if verbose > 0:
                         print(d['freq'], thr['nthread'], p['arg'][arg_num], 
-                                'T', p['total_time'], 'P', pw, 'E', p['total_time']*pw)
+                                'T', p['total_time'], 'P', pw, 'E', p['total_time']*pw/pw_size)
 
         self.dataFrame = pd.DataFrame(df, columns=['freq', 'thr', 'in', 'time', 'pw'])
         cat = pd.factorize(self.dataFrame['in'])
