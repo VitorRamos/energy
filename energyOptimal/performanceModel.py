@@ -7,6 +7,9 @@ from sklearn.model_selection import cross_validate, cross_val_score
 
 class performanceModel:
     def __init__(self, dataFramefile= '', svrfile=''):
+        '''
+            dataFramefile and svrfile: load fited model
+        '''
         self.frequencies = []
         self.threads = []
         self.powers = []
@@ -30,7 +33,7 @@ class performanceModel:
             timeDiff : Uses time interval to estimate energy and accumulates
             allSamples : Keep all samples on the power array, energy it's not estimated
         createDataFrame: boolean
-        freqs_filter: list, list of frequencies to load
+        freqs_filter: list, list of frequencies to load in Hz
         thrs_filter: list, list of threads to load
         return dataFrame if createDataFrame is True otherwise frequencies, threads, powers
         '''
@@ -81,18 +84,13 @@ class performanceModel:
                     elif has_ipmi:
                         if method == 'timeDiff':
                             pw= 0
-                            print(freq,thr['nthread'], p['arg'][arg_num])
                             for i in range(len(p['ipmi'])):
                                 pot = p['ipmi'][i]['sensor']['sources'][0]['dcOutPower']
                                 pot += p['ipmi'][i]['sensor']['sources'][1]['dcOutPower']
                                 if i - 1 >= 0:
                                     pw += (p['ipmi'][i]['time']-p['ipmi'][i - 1]['time'])*pot
-                                    print((p['ipmi'][i]['time']-p['ipmi'][i - 1]['time'])*pot)
                                 if i == len(p['ipmi']) - 1:
                                     pw += pot * (p['total_time']-p['ipmi'][i]['time'])
-                                    print(pot * (p['total_time']-p['ipmi'][i]['time']),
-                                            (p['total_time']-p['ipmi'][i]['time']))
-                            print('-'*100)
 
                         else:    
                             for s in p['ipmi']:
@@ -145,7 +143,7 @@ class performanceModel:
                         this assume the interval between samples are constant
             timeDiff : Uses time interval to estimate energy and accumulates
             allSamples : Keep all samples on the power array, energy it's not estimated
-        freqs_filter: list, list of frequencies to load
+        freqs_filter: list, list of frequencies to load in GHz
         thrs_filter: list, list of threads to load
 
         return dataFrame if createDataFrame is True otherwise frequencies, threads, powers
@@ -158,15 +156,16 @@ class performanceModel:
         has_rapl= 'rapl' in data[0]['threads'][0]['lpcpu'][0].keys()
 
         for thr in data[0]['threads']:
-            if len(thrs_filter) > 0 and thr['nthreads'] not in thrs_filter: continue
+            if len(thrs_filter) > 0 and thr['nthread'] not in thrs_filter: continue
             self.threads.append(thr['nthread'])
 
         df = []
+        isClose= lambda x,y: abs(x-y)<0.01
         for d in data:
-            assert len(d['threads']) == len(self.threads)
-            if len(freqs_filter) > 0 and freq not in freqs_filter: continue
+            # assert len(d['threads']) == len(self.threads)
+            if len(freqs_filter) > 0 and not any(isClose(x,float(d['freq'])/1e6) for x in freqs_filter): continue
             for thr in d['threads']:
-                if len(thrs_filter) > 0 and thr['nthreads'] not in thrs_filter: continue
+                if len(thrs_filter) > 0 and thr['nthread'] not in thrs_filter: continue
                 for p in thr['lpcpu']:
                     pw = 0
                     pw_size = 0
@@ -184,8 +183,7 @@ class performanceModel:
                             pot = float(s['sensor']['sources'][0]['dcOutPower']+
                                     s['sensor']['sources'][1]['dcOutPower'])
                             pw+=pot
-                            df.append([d['freq'], thr['nthread'], p['arg'][arg_num],
-                                        s['time'], pot])
+                            df.append([d['freq'], thr['nthread'], p['arg'][arg_num], s['time'], pot])
                         pw_size= len(p['ipmi'])
                      
                     df.append([d['freq'], thr['nthread'], p['arg'][arg_num], 
@@ -200,6 +198,7 @@ class performanceModel:
         self.dataFrame['in_cat'] = cat[0] + 1
         self.dataFrame['freq'] = self.dataFrame['freq'].astype(float)/1e6
         self.dataFrame= self.dataFrame.sort_values(['freq','thr','in_cat','time'])
+        df_cat= self.dataFrame[['in','in_cat']].drop_duplicates()
 
         if method == 'constTime':
             df = self.dataFrame.groupby(['freq','thr','in_cat']).mean().reset_index()
@@ -222,7 +221,8 @@ class performanceModel:
         self.threads= self.dataFrame['thr'].unique()
         self.frequencies= self.dataFrame['freq'].unique()
         self.power= self.dataFrame['pw'].values
-
+        
+        self.dataFrame = pd.merge(self.dataFrame,df_cat)
         return self.dataFrame
 
     def saveDataframe(self, filename):
@@ -287,9 +287,20 @@ class performanceModel:
             print('Cross validacao mpe', scores*100, np.mean(scores)*100)
         return scores
 
-    def estimate2(self, frs, thrs, ins):
+    def estimate_(self, frs, thrs, ins, dataframe=False):
+        '''
+        Estimate the time from the list of freq, thr, in
+        dataframe : bool, return a dataframe
+
+        return list of estimatives
+        '''
         X= np.array(np.meshgrid(frs,thrs,ins)).T.reshape(-1,3)
         Y= self.svr.predict(X)
+
+        if dataframe:
+            X= pd.DataFrame(X, columns=['freq','thr','in_cat'])
+            X['time']= Y
+            return X
 
         return Y
 
