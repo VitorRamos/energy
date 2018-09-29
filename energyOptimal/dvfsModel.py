@@ -10,7 +10,20 @@ class dvfsModel:
         self.powers = []
         self.dataFrame = None
 
-    def loadData(self, filename, arg_num, method='allSamples'):
+    def loadData(self, filename, arg_num, verbose=0, method='allSamples'):
+        '''
+        filename: string
+        arg_num: argument that contains the problem size
+        verbose: number, level of verbose mode #TODO
+        method: string
+            constTime : Average the power samples to estimate energy,
+                        this assume the interval between samples are constant
+            timeDiff : Uses time interval to estimate energy and accumulates
+            allSamples : Keep all samples on the power array, energy it's not estimated
+
+        return dataFrame if createDataFrame is True otherwise frequencies, threads, powers
+        '''
+
         with open(filename, 'rb') as f:
             data = pickle.load(f)
 
@@ -28,10 +41,9 @@ class dvfsModel:
                         pot = float(s['sensor']['sources'][0]['dcOutPower'] +
                                     s['sensor']['sources'][1]['dcOutPower'])
                         pw.append(pot)
-                        row = [s['freqs'][key][0]
-                            for key in sorted(s['freqs'].keys())]
-                        df.append([thr['nthread'], lpcpu['arg']
-                                  [arg_num], s['time'], pot] + row)
+                        row = [float(s['freqs'][key][0]) for key in sorted(s['freqs'].keys())]
+                        df.append([thr['nthread'], lpcpu['arg'][arg_num], s['time'], pot]+row)
+
                     pw = np.asarray(pw)
                     df.append([thr['nthread'], lpcpu['arg'][arg_num],
                               lpcpu['total_time'], pw.mean()] + row)
@@ -41,8 +53,6 @@ class dvfsModel:
 
         if method == 'constTime':
             self.dataFrame = self.dataFrame.sort_values(['thr', 'in', 'time'])
-            self.dataFrame[['cpu%i' % x for x in range(0, 32)]] = \
-                            self.dataFrame[['cpu%i' % x for x in range(0, 32)]].astype(float)
             freqs = pd.DataFrame(self.dataFrame.groupby(['thr', 'in']).mean().reset_index())
             freqs['time'] = self.dataFrame.groupby(['thr', 'in']).tail(1)['time'].values
             self.dataFrame = freqs
@@ -50,12 +60,11 @@ class dvfsModel:
 
         elif method == 'timeDiff':
             self.dataFrame = self.dataFrame.sort_values(['thr', 'in', 'time'])
-            def vai(df):
-                df['time_diff'] = np.hstack(([0], df['time'].values[1:]-df['time'].values[:-1]))
+            def difftime(df):
+                df['time_diff']= np.hstack(([0], df['time'].values[1:]-df['time'].values[:-1]))
                 df['energy']= df['time_diff']*df['pw']
                 return df
-            self.dataFrame=self.dataFrame.groupby(['thr', 'in']).apply(vai)
-            self.dataFrame[['cpu%i'%x for x in range(0, 32)]]=self.dataFrame[['cpu%i'%x for x in range(0, 32)]].astype(float)
+            self.dataFrame=self.dataFrame.groupby(['thr', 'in']).apply(difftime)
             freqs= pd.DataFrame(self.dataFrame.groupby(['thr','in']).mean().reset_index())
             freqs['time']= self.dataFrame.groupby(['thr','in']).tail(1)['time'].values
             freqs['energy']= self.dataFrame.groupby(['thr','in']).energy.sum().values
