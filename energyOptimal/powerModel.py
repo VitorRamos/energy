@@ -4,6 +4,9 @@ from scipy.optimize import least_squares
 
 class powerModel:
     def __init__(self, filename= ''):
+        '''
+            filename: load fited model
+        '''
         self.frequencies = []
         self.threads = []
         self.powers = []
@@ -13,7 +16,7 @@ class powerModel:
         if filename:
             self.load(filename)
 
-    def getVectorIPMI(self, ipmi, name):
+    def __getVectorIPMI(self, ipmi, name):
         ret1 = []
         ret2 = []
         for t in ipmi:
@@ -29,7 +32,7 @@ class powerModel:
             return ret1[20:-20], ret2[20:-20]
         return ret1, ret2
     
-    def getVectorRAPL(self, rapl):
+    def __getVectorRAPL(self, rapl):
         ret = []
         for t in rapl:
             ret.append(float(t))
@@ -64,25 +67,25 @@ class powerModel:
         # get sensors name
 
         for thr in data[0]['threads']:
-            if len(thrs_filter) > 0 and thr['nthreads'] not in thrs_filter: continue
+            if len(thrs_filter) > 0 and thr['nthread'] not in thrs_filter: continue
             self.threads.append(thr['nthread'])
 
+        isClose= lambda x,y: abs(x-y)<0.01
         for d in data:
-            assert len(d['threads']) == len(self.threads)
-            freq = int(d['freq'])
-            if len(freqs_filter) > 0 and freq not in freqs_filter: continue
-            freq= freq/1e6
+            # assert len(d['threads']) == len(self.threads)
+            freq = float(d['freq'])/1e6
+            if len(freqs_filter) > 0 and not any(isClose(x,freq) for x in freqs_filter): continue
             self.frequencies.append(freq)
             for thr in d['threads']:
-                if len(thrs_filter) > 0 and thr['nthreads'] not in thrs_filter: continue
+                if len(thrs_filter) > 0 and thr['nthread'] not in thrs_filter: continue
                 for pcpu in thr['lpcpu'][0:1]: #TODO choose wich argument 
                     pw = 0
                     sensors_dict= {}
 
                     if has_ipmi:
-                        tmp1_1, tmp1_2 = self.getVectorIPMI(pcpu['ipmi'], 'temp1')
-                        tmp2_1, tmp2_2 = self.getVectorIPMI(pcpu['ipmi'], 'temp2')
-                        pw_1, pw_2 = self.getVectorIPMI(pcpu['ipmi'], ipmi_source)
+                        tmp1_1, tmp1_2 = self.__getVectorIPMI(pcpu['ipmi'], 'temp1')
+                        tmp2_1, tmp2_2 = self.__getVectorIPMI(pcpu['ipmi'], 'temp2')
+                        pw_1, pw_2 = self.__getVectorIPMI(pcpu['ipmi'], ipmi_source)
                         tmp1 = (np.mean(tmp1_1) + np.mean(tmp1_2)) / 2.0
                         tmp2 = (np.mean(tmp2_1) + np.mean(tmp2_2)) / 2.0
                         pw = (np.mean(pw_1) + np.mean(pw_2))
@@ -98,7 +101,7 @@ class powerModel:
                             print("-"*70)
 
                     if has_rapl:
-                        pw_vec = self.getVectorRAPL(pcpu['rapl'])
+                        pw_vec = self.__getVectorRAPL(pcpu['rapl'])
                         pw = np.mean(pw_vec)
                         pw_std = np.std(pw_vec)
                         if verbose:
@@ -150,13 +153,27 @@ class powerModel:
         return self.power_model_x
     
     def save(self,filename):
+        '''
+            Save power model constants
+        '''
         assert self.power_model_x is not None
         with open(filename, 'wb+') as f:
-            pickle.dump(self.power_model_x, f, pickle.HIGHEST_PROTOCOL)
+            pickle.dump({'power_model_x':self.power_model_x,
+                        'frequencies':self.frequencies,
+                        'threads':self.threads,
+                        'powers':self.powers}, f, pickle.HIGHEST_PROTOCOL)
 
     def load(self,filename):
+        '''
+            Load power model constants
+        '''
         with open(filename, 'rb+') as f:
-            self.power_model_x= pickle.load(f)
+            data= pickle.load(f)
+            self.power_model_x= data['power_model_x']
+            self.frequencies= data['frequencies']
+            self.threads= data['threads']
+            self.powers= data['powers']
+            
         return self.power_model_x
     
     def estimate(self, f, p):
