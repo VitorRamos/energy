@@ -5,7 +5,11 @@ import pandas as pd
 class energyModel:
     def __init__(self, pw_model, perf_model, freq_range_=None, thr_range_=None, inputs_range_=None):
         '''
-            TODO
+            pw_model: power model fited
+            perf_model: performance model fited
+            freq_range_: frequency range for estimation dataframe
+            thr_range_: threads range for estimation dataframe
+            inputs_range_: inputs range for estimation dataframe
         '''
         self.power_model= pw_model
         self.performace_model= perf_model
@@ -24,18 +28,28 @@ class energyModel:
         else:
             self.inputs_range= inputs_range_
 
-        self.createDataframe()
+        self.__createDataframe()
 
-    def createDataframe(self):
+    def __createDataframe(self):
         self.dataFrame= pd.DataFrame(np.array(np.meshgrid(self.freq_range,
                                         self.thr_range,self.inputs_range)).T.reshape(-1,3),
-                                        columns=['freq', 'thr', 'in'])
-        self.dataFrame['time']= self.performace_model.estimate(self.dataFrame[['freq','thr','in']])
+                                        columns=['freq', 'thr', 'in_cat'])
+        self.dataFrame['time']= self.performace_model.estimate(self.dataFrame[['freq','thr','in_cat']])
         self.dataFrame['pw']= np.tile(self.power_model.estimate(self.freq_range,self.thr_range), 
                                                         len(self.inputs_range))
-        self.dataFrame['energy']= self.dataFrame['time']*self.dataFrame['pw']
+        self.dataFrame['energy_model']= self.dataFrame['time']*self.dataFrame['pw']
         return self.dataFrame
     
     def minimalEnergy(self):
-        return self.dataFrame[self.dataFrame.energy.isin( self.dataFrame.groupby('in').energy.min() )]
+        '''
+            Return dataframe with minimal energy for all inputs
+        '''
+        return self.dataFrame[self.dataFrame.energy_model.isin( self.dataFrame.groupby('in_cat').energy_model.min() )]
     
+    def realMinimalEnergy(self):
+        '''
+            Return dataframe with minimal energy for all inputs with real energy consumed from perf model
+        '''
+        df= self.minimalEnergy()[['in_cat','thr','freq','energy_model']]
+        df= pd.merge(df,self.performace_model.dataFrame[['in_cat','thr','freq','time','energy']])
+        return df
