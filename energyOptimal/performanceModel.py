@@ -235,23 +235,29 @@ class performanceModel:
             self.dataFrame= pickle.load(f)
         return self.dataFrame
 
-    def fit(self, C_=10e3, gamma_=0.1):
+    def fit(self, C_=10e3, gamma_=0.1, train_size_= 0.9, dataframe=False):
         '''
         Fit the svr model with values from dataframe
 
         C_: svr parameter
         gamma_: svr parameter
-        test_size: percentage of samples used on test #TODO
+        train_size_: percentage of samples used on train
 
         return svr
         '''
         assert self.dataFrame is not None
         self.svr= SVR(C=C_,gamma=gamma_)
+
         X = self.dataFrame[['freq', 'thr', 'in_cat']].values
         Y = self.dataFrame['time'].astype(float).values
-        Xtrain, Xtest, Ytrain, Ytest = train_test_split(X, Y, test_size=0.1, random_state=0)
+        Xtrain, Xtest, Ytrain, Ytest = train_test_split(X, Y, train_size=train_size_, random_state=0)
         self.svr.fit(Xtrain, Ytrain)
 
+        if dataframe:
+            Xtrain= pd.DataFrame(Xtrain, columns=['freq','thr','in_cat'])
+            Xtrain['time']= Ytrain
+            return Xtrain
+            
         return self.svr
 
     def saveSVR(self, filename):
@@ -304,7 +310,7 @@ class performanceModel:
 
         return Y
 
-    def estimate(self, X):
+    def estimate(self, X, dataframe=False):
         '''
         Estimate the time from the list of [freq, thr, in]
 
@@ -312,15 +318,21 @@ class performanceModel:
         '''
         assert self.svr is not None
         Y= self.svr.predict(X)
+
+        if dataframe:
+            X= pd.DataFrame(X, columns=['freq','thr','in_cat'])
+            X['time']= Y
+            return X
+
         return Y
 
 
-    def error(self, method='mab'):
+    def error(self, method='mpe'):
         '''
             Calculate the error from the measured values, need svr and dataframe
 
             method: string
-                    mab, mean abusolute error
+                    mae, mean abusolute error
                     mpe, mean percentage error
             return error
         '''
