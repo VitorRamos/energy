@@ -16,7 +16,7 @@ import argparse
 parser= argparse.ArgumentParser(description='Create and visualize performance model from monitor data')
 parser.add_argument('--create',type=str,help='Create performance model',nargs=4,metavar=('data','arg_num','dataframe','svr'))
 parser.add_argument('--show',type=str,help='Show performance model',nargs=3,metavar=('dataframe','svr','title'))
-parser.add_argument('--freqs',type=str,help='Frequency range', default='1.2,2.3;0.1',nargs='?')
+parser.add_argument('--freqs',type=str,help='Frequency range', default='1.2,2.3,0.1',nargs='?')
 parser.add_argument('--thrs',type=str,help='Threads range', default='',nargs='?')
 parser.add_argument('--ins',type=str,help='Input range', default='',nargs='?')
 args= parser.parse_args()
@@ -43,7 +43,8 @@ def createPerformanceModel(path, idx, save_df, save_svr):
     perf_model= performanceModel()
     perf_model.loadData(filename=path, arg_num=int(idx), verbose=0, method='constTime',
                             freqs_filter=get_range(args.freqs), thrs_filter= get_range(args.thrs))
-    perf_model.dataFrame= perf_model.dataFrame[perf_model.dataFrame['in_cat'].isin(get_range(args.ins))]
+    if args.ins:
+        perf_model.dataFrame= perf_model.dataFrame[perf_model.dataFrame['in_cat'].isin(get_range(args.ins))]
     print("Program", path)
     print(perf_model.dataFrame.head(5))
     perf_model.fit(C_=10e3,gamma_=0.1)
@@ -61,7 +62,7 @@ def visualizePeformanceModel(path_df, path_svr, title_):
     freqs= get_range(args.freqs) if args.freqs else df['freq'].unique()
     thrs= get_range(args.thrs) if args.thrs else df['thr'].unique()
     ins= get_range(args.ins) if args.ins else  df['in_cat'].unique()
-    df_pred= perf_model.estimate_(freqs, thrs, ins, dataframe=True)
+    df_pred= perf_model.estimate_(freqs, thrs, ins, dataframe=True).sort_values(['freq', 'thr'])
     print(df_pred.head(5))
     
     def update_data(val):
