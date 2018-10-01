@@ -26,7 +26,7 @@ class monitorProcess:
 
     def run(self, list_threads, list_args, idle_time, save_name, verbose=0):
         '''
-        TODO
+        TODO list of frequencies
         '''
         current_dir= os.getcwd()
         os.chdir(self.program_path)
@@ -45,6 +45,7 @@ class monitorProcess:
                     self.cpu.set_governors("userspace")
                     self.cpu.disable_cpu(cpus[thr:])
                     self.cpu.set_frequencies(f)
+                    #TODO assert len(online_cpus==thr) and freq == f
 
                     info_pcpu = []
                     for arg in list_args:
@@ -100,7 +101,7 @@ class monitorProcess:
 
     def run_dvfs(self, list_threads, list_args, idle_time, save_name, verbose= 0):
         '''
-        TODO
+        TODO list of frequencies
         '''
         current_dir= os.getcwd()
         os.chdir(self.program_path)
@@ -120,7 +121,7 @@ class monitorProcess:
                 self.cpu.disable_cpu(cpus[thr:])
                 if verbose > 0:
                     print(cpus[thr:], self.cpu.get_online_cpus())
-                #TODO assert len(online_cpus==thr)
+                #TODO assert len(online_cpus==thr) and freq == f
 
                 info_pcpu = []
                 for arg in list_args:
