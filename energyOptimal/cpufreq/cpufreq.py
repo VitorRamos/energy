@@ -178,11 +178,11 @@ class cpuFreq:
             if setSpeed:
                 fpath = path.join("cpu%i"%cpu,"cpufreq","scaling_setspeed")
                 self.__write_cpu_file(fpath, str(freq).encode())
-            if setMaxfeq:
-                fpath = path.join("cpu%i"%cpu,"cpufreq","scaling_max_freq")
-                self.__write_cpu_file(fpath, str(freq).encode())
             if setMinfreq:
                 fpath = path.join("cpu%i"%cpu,"cpufreq","scaling_min_freq")
+                self.__write_cpu_file(fpath, str(freq).encode())
+            if setMaxfeq:
+                fpath = path.join("cpu%i"%cpu,"cpufreq","scaling_max_freq")
                 self.__write_cpu_file(fpath, str(freq).encode())
 
     def set_governors(self, gov, rg=None):
