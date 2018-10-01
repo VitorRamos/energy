@@ -27,15 +27,17 @@ def createPerformanceModels(appname=None):
         if len(df['in_cat']) > 5: #limit to 5 inputs
             cats= perf_model.dataFrame['in_cat'].unique()[-5:]
             perf_model.dataFrame= perf_model.dataFrame[perf_model.dataFrame['in_cat'].isin(cats)]
-        print("Program", p)
-        print(df.head(5))
+
         perf_model.fit(C_=10e3,gamma_=0.1)
-        print("MPE ", perf_model.error(method='mpe')*100)
-        print("MAE ", perf_model.error(method='mae'))
         scores= perf_model.crossValidate(method='mpe')
-        print("CrossValidation ", np.mean(scores)*100, scores)
         perf_model.saveDataframe('data/dataframes/'+p)
         perf_model.saveSVR('data/svr/'+p)
+
+        print("Program", p)
+        print(df.head(5))
+        print("MPE ", perf_model.error(method='mpe')*100)
+        print("MAE ", perf_model.error(method='mae'))
+        print("CrossValidation ", np.mean(scores)*100, scores)
 
 
 def figures(appname=None, energy= True, in_cmp=3):
@@ -66,50 +68,7 @@ def figures(appname=None, energy= True, in_cmp=3):
             plotData.ax.set_zlim(0,15)
         aux= 'energy' if energy else 'time'
         plotData.savePlot('fotos/{}/{}.png'.format(aux, app),showLegend=True)
-
-# def ondemand32_comp(appname=None):
-#     row= []
-#     for title, dvfs, model, arg in zip(titles,parsec_dvfs,parsec_models,parsecapps_argnum):
-#         if 'freq' in model:
-#             continue
-#         if appname and not appname in dvfs:
-#             continue
-#         ondemand= dvfsModel()
-#         ondemand.loadData(filename= 'data/dvfs/ondemand/'+dvfs, arg_num= arg, method='constTime')
-#         pw_model= powerModel('data/ipmi_2-32_cpuload.pw')
-#         perf_model= performanceModel('data/dataframes/'+model, 'data/svr/'+model)
-#         en_model= energyModel(pw_model,perf_model)#,
-#                             #thr_range_= np.hstack(([1],np.arange(2,33,2))),
-#                             #freq_range_= np.arange(1.2e6,2.3e6,0.1e6)/1e6)
-
-#         ond= ondemand.dataFrame[['in','thr','time','energy']].sort_values(['in','thr'])
-#         ond= pd.merge(ond,perf_model.dataFrame[['in','in_cat']]).drop_duplicates()
-#         ond= ond.rename(columns={'energy':'energy_ondemand','time':'time_ondemand'})
-#         ond= ond[ond['thr']==32]
-#         min_df= en_model.realMinimalEnergy()
-#         min_df= pd.merge(ond[['in_cat','energy_ondemand','time_ondemand']],min_df)
-#         min_df= min_df.rename(columns={'energy':'energy_real'})
-
-#         min_df['saving_energy']= (min_df['energy_real']-min_df['energy_ondemand'])/min_df['energy_real']*100
-#         min_df['saving_time']= (min_df['time']-min_df['time_ondemand'])/min_df['time']*100
-        
-#         row.append([model.split('_')[1], min_df['saving_energy'].mean(), min_df['saving_time'].mean(), perf_model.dataFrame.energy.sum()])
-
-#         min_df= min_df[['in_cat','energy_ondemand','energy_real']]
-#         min_df= min_df.set_index('in_cat')
-#         min_df.plot.bar(width=0.8)
-#         plt.xlabel('Inputs')
-#         plt.ylabel('Energy (J)')
-#         plt.title(title)
-#         plt.tight_layout()
-#         # plt.show()
-#         # plt.savefig('fotos/32cores/'+dvfs+'.png')
-
-#     df= pd.DataFrame(row,columns=['Program','Saving_mean', 'Saving_time', 'Total_train'])
-#     df= df.sort_values('Saving_mean')
-#     df.to_csv('tables/32cores.csv')
-#     print(df)
-
+    
 def comparation(appname=None, proposed_bar=False, relative=True, thrs_filter= []):
     row=[]
     for title, dvfs, model, arg in zip(titles,parsec_dvfs,parsec_models,parsecapps_argnum):
@@ -123,6 +82,8 @@ def comparation(appname=None, proposed_bar=False, relative=True, thrs_filter= []
         perf_model= performanceModel('data/dataframes/'+model, 'data/svr/'+model)
         en_model= energyModel(pw_model,perf_model)
 
+        #TODO verify if arguments match
+        
         ond= ondemand.dataFrame[['in','thr','time','energy']]
         ond= pd.merge(ond,perf_model.dataFrame[['in','in_cat']]).drop_duplicates().sort_values(['in_cat','thr'])
         if thrs_filter:
