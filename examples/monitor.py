@@ -43,11 +43,11 @@ args_fluid=\
 ]
 args_freq=\
 [\
-["webdocs_250k_05.dat","1100"],\
-["webdocs_250k_06.dat","1100"],\
-["webdocs_250k_07.dat","1100"],\
-["webdocs_250k_08.dat","1100"],\
-["webdocs_250k_09.dat","1100"]
+["webdocs_250k_05.dat","11000"],\
+["webdocs_250k_06.dat","11000"],\
+["webdocs_250k_07.dat","11000"],\
+["webdocs_250k_08.dat","11000"],\
+["webdocs_250k_09.dat","11000"]
 ]
 args_rtview=\
 [\
@@ -75,11 +75,11 @@ args_vips=\
 ]
 args_x264=\
 [\
-["--quiet","--qp","20","--partitions","b8x8,i4x4","--ref","5","--direct","auto","--b-pyramid","--weightb","--mixed-refs","--no-fast-pskip","--me","umh","--subme","7","--analyse","b8x8,i4x4","--threads","__nt__","-o","eledream.264","eledream_1920x1080_512.y4m"],\
-["--quiet","--qp","20","--partitions","b8x8,i4x4","--ref","5","--direct","auto","--b-pyramid","--weightb","--mixed-refs","--no-fast-pskip","--me","umh","--subme","7","--analyse","b8x8,i4x4","--threads","__nt__","-o","eledream.264","eledream_1920x1080_459.y4m"],\
-["--quiet","--qp","20","--partitions","b8x8,i4x4","--ref","5","--direct","auto","--b-pyramid","--weightb","--mixed-refs","--no-fast-pskip","--me","umh","--subme","7","--analyse","b8x8,i4x4","--threads","__nt__","-o","eledream.264","eledream_1920x1080_408.y4m"],\
+["--quiet","--qp","20","--partitions","b8x8,i4x4","--ref","5","--direct","auto","--b-pyramid","--weightb","--mixed-refs","--no-fast-pskip","--me","umh","--subme","7","--analyse","b8x8,i4x4","--threads","__nt__","-o","eledream.264","eledream_1920x1080_306.y4m"],\
 ["--quiet","--qp","20","--partitions","b8x8,i4x4","--ref","5","--direct","auto","--b-pyramid","--weightb","--mixed-refs","--no-fast-pskip","--me","umh","--subme","7","--analyse","b8x8,i4x4","--threads","__nt__","-o","eledream.264","eledream_1920x1080_357.y4m"],\
-["--quiet","--qp","20","--partitions","b8x8,i4x4","--ref","5","--direct","auto","--b-pyramid","--weightb","--mixed-refs","--no-fast-pskip","--me","umh","--subme","7","--analyse","b8x8,i4x4","--threads","__nt__","-o","eledream.264","eledream_1920x1080_306.y4m"]
+["--quiet","--qp","20","--partitions","b8x8,i4x4","--ref","5","--direct","auto","--b-pyramid","--weightb","--mixed-refs","--no-fast-pskip","--me","umh","--subme","7","--analyse","b8x8,i4x4","--threads","__nt__","-o","eledream.264","eledream_1920x1080_408.y4m"],\
+["--quiet","--qp","20","--partitions","b8x8,i4x4","--ref","5","--direct","auto","--b-pyramid","--weightb","--mixed-refs","--no-fast-pskip","--me","umh","--subme","7","--analyse","b8x8,i4x4","--threads","__nt__","-o","eledream.264","eledream_1920x1080_459.y4m"],\
+["--quiet","--qp","20","--partitions","b8x8,i4x4","--ref","5","--direct","auto","--b-pyramid","--weightb","--mixed-refs","--no-fast-pskip","--me","umh","--subme","7","--analyse","b8x8,i4x4","--threads","__nt__","-o","eledream.264","eledream_1920x1080_512.y4m"]
 ]
 args_xhpl= [['__nt__','7000'],\
     ['__nt__','8000'],\
@@ -91,7 +91,15 @@ args_openmc= [['input1'],\
     ['input2'],\
     ['input3'],\
     ['input4'],\
-    ['input5']]
+    ['input5']\
+]
+
+args_body=[['sequenceB_1043', '4', '64', '1000', '10', '0', '__nt__'],\
+['sequenceB_1043', '4', '128', '1000', '10', '0', '__nt__'],\
+['sequenceB_1043', '4', '256', '1000', '10', '0', '__nt__'],\
+['sequenceB_1043', '4', '512', '1000', '10', '0', '__nt__'],\
+['sequenceB_1043', '4', '1024', '1000', '10', '0', '__nt__']\
+]
 
 try:
     programs= [monitorProcess(program_name_= 'apps/openmc_/openmc', sensor_type_='ipmi'),
@@ -105,22 +113,26 @@ try:
                monitorProcess(program_name_= 'apps/fluidanimate_/fluidanimate', sensor_type_='ipmi'),
                monitorProcess(program_name_= 'apps/swaptions_/swaptions', sensor_type_='ipmi'),
                monitorProcess(program_name_= 'apps/rtview_/rtview', sensor_type_='ipmi'),
+               monitorProcess(program_name_= 'apps/bodytrack_/bodytrack', sensor_type_='ipmi'),
                monitorProcess(program_name_= 'apps/freqmine_/freqmine', sensor_type_='ipmi')]
 
     args= [args_openmc, args_xhpl, args_canneal, args_dedup,
-            args_ferret, args_x264, args_vips, args_black, args_fluid, args_swap, args_rtview, args_freq]
+            args_ferret, args_x264, args_vips, args_black, args_fluid, args_swap, args_rtview, args_freq, args_body]
 
     for p, a in zip(programs,args):
-    	try:
-    		if 'fluid' in p.program_name:
-    			thr= [1,2,4,8,16,32]
-    		else:
-    			thr= [1]+list(range(2,33,2))
-    		p.run_dvfs(list_threads= thr, list_args= a, idle_time= 30,
-    		verbose=2, save_name='data/dvfs/{}_completo_2.pkl'.format(p.program_name))
-    	except Exception as e:
-    	    print(e)
+#        if not 'canneal' in p.program_name:
+#            continue
+        try:
+            if 'fluid' in p.program_name:
+                thr= [1,2,4,8,16,32]
+            else:
+                thr= [1]+list(range(2,33,2))
+            p.run_dvfs(list_threads= thr, list_args= a, idle_time= 30,
+            verbose=2, save_name='data/dvfs/{}_completo_5.pkl'.format(p.program_name))
+        except Exception as e:
+            print(e)
 except KeyboardInterrupt:
     cpu= cpuFreq()
     cpu.reset()
     
+
