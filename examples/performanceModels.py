@@ -15,7 +15,8 @@ import argparse
 
 parser= argparse.ArgumentParser(description='Create and visualize performance model from monitor data')
 parser.add_argument('--create',type=str,help='Create performance model',nargs=4,metavar=('data','arg_num','dataframe','svr'))
-parser.add_argument('--show',type=str,help='Show performance model',nargs=3,metavar=('dataframe','svr','title'))
+parser.add_argument('--show',type=str,help='Show performance model',nargs=2,metavar=('dataframe','svr'))
+parser.add_argument('--title',type=str,help='Title on figure',nargs=1)
 parser.add_argument('--freqs',type=str,help='Frequency range', default='1.2,2.3,0.1',nargs='?')
 parser.add_argument('--thrs',type=str,help='Threads range', default='',nargs='?')
 parser.add_argument('--ins',type=str,help='Input range', default='',nargs='?')
@@ -87,4 +88,5 @@ def visualizePeformanceModel(path_df, path_svr, title_):
 if args.create:
     createPerformanceModel(*args.create)
 elif args.show:
-    visualizePeformanceModel(*args.show)
+    args_perf= args.show+[args.title]
+    visualizePeformanceModel(*args_perf)
