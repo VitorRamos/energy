@@ -191,11 +191,11 @@ def createReducedPerformanceModel2(path, arg_num, title_='', save_df='', save_sv
         y_en.append(aux['energy'].sum()/1e6)
         # scores= perf_model.crossValidate(method='mpe')
 
-        print('%s_%i.pkl'%(title,f), aux.shape, aux['energy'].sum()/1e6, error*100, perf_model.error()*100)
+        print('%s_%i.pkl'%(title,f), aux.shape, aux['energy'].sum()/1e6, error, perf_model.error()*100)
         print(use_freq)
 
-        perf_model.saveDataframe('data/dataframes/%s_%i.pkl'%(title,f))
-        perf_model.saveSVR('data/svr/%s_%i.pkl'%(title,f))
+        perf_model.saveDataframe('data/dataframes/%s_%i.pkl'%(title_,f))
+        perf_model.saveSVR('data/svr/%s_%i.pkl'%(title_,f))
 
 
     fig, ax1 = plt.subplots()
@@ -256,10 +256,12 @@ def comparation(appname=None, proposed_bar=False, relative=True, thrs_filter= []
             plt.plot([-1,6],[1,1], '--',color='k',label='proposed')
             plt.plot([-1,6],[ond_en.mean().mean(),ond_en.mean().mean()], ':',color='k',label='average gain')
 
-        plt.xlabel('Inputs')
-        plt.ylabel('Energy relative' if relative else 'Eenergy (J)')
-        plt.title(title)
-        plt.legend(loc='center right',bbox_to_anchor=(1.15,0.6))
+        plt.xlabel('Inputs',fontsize=18)
+        plt.ylabel('Energy relative' if relative else 'Eenergy (J)',fontsize=18)
+        plt.xticks(fontsize=18)
+        plt.yticks(fontsize=18)
+        plt.title(title,fontsize=22)
+        plt.legend(loc='center right',bbox_to_anchor=(1.2,0.55),fontsize=12)
         plt.tight_layout()
         plt.savefig('fotos/relative/%s.png'%dvfs)
         # plt.show()
@@ -302,26 +304,26 @@ parsecapps=['completo_black_5.pkl','completo_canneal_2.pkl','completo_dedup_3.pk
             'completo_x264_3.pkl','completo_xhpl.pkl','completo_openmc_kernel_novo.pkl',
             'completo_bodytrack.pkl']
 parsec_models=['Blackscholes_2.pkl', 'Canneal_2.pkl', 'Dedup_2.pkl',
-                'Ferret_2.pkl', 'Fluidanimate_2.pkl', '',
+                'Ferret_2.pkl', 'Fluidanimate_2.pkl', 'Freqmine_2.pkl',
                 'Raytrace_2.pkl', 'Swaptions_2.pkl', 'Vips_2.pkl',
                 'x264_2.pkl', 'HPL_2.pkl', 'Openmc_3.pkl',
                 'Bodytrack_2.pkl']
 parsec_dvfs=['blackscholes_completo_3.pkl', 'canneal_completo_3.pkl', 'dedup_completo_3.pkl',
-             'ferret_completo_3.pkl', 'fluidanimate_completo_3.pkl', 'freqmine_completo_3.pkl',
+             'ferret_completo_3.pkl', 'fluidanimate_completo_3.pkl', 'freqmine_completo_5.pkl',
              'rtview_completo_3.pkl', 'swaptions_completo_3.pkl', 'vips_completo_3.pkl',
              'x264_completo_3.pkl', 'xhpl_completo_3.pkl', 'openmc_completo_2.pkl',
              'bodytrack_completo_5.pkl']
 parsecapps_argnum= [1, 4, 6, 
-                    0, 1, 1,
+                    0, 1, 0,
                     7, 3, 1,
                     23, 1, 0,
                     2]
 # energy_figures(parsecapps[0])
 # createPerformanceModels(parsecapps[0])
-comparation(appname='body',proposed_bar=False,relative=True,thrs_filter=[])
-# figures(energy=True, in_cmp=5)
+comparation(appname='dedup',proposed_bar=False,relative=True,thrs_filter=[])
+# figures(energy=False, in_cmp=3)
 
-for app,arg,title in zip(parsecapps,parsecapps_argnum,titles):
-    if not 'body' in app:
-        continue
-    createReducedPerformanceModel2('data/performance_model/%s'%app,arg,title_=title)
+# for app,arg,title in zip(parsecapps,parsecapps_argnum,titles):
+#     if not 'freq' in app:
+#         continue
+#     createReducedPerformanceModel2('data/performance_model/%s'%app,arg,title_=title)

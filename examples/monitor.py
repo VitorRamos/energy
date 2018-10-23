@@ -117,7 +117,7 @@ try:
                monitorProcess(program_name_= 'apps/freqmine_/freqmine', sensor_type_='ipmi')]
 
     args= [args_openmc, args_xhpl, args_canneal, args_dedup,
-            args_ferret, args_x264, args_vips, args_black, args_fluid, args_swap, args_rtview, args_freq, args_body]
+            args_ferret, args_x264, args_vips, args_black, args_fluid, args_swap, args_rtview, args_body, args_freq]
 
     for p, a in zip(programs,args):
 #        if not 'canneal' in p.program_name:
