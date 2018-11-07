@@ -39,7 +39,7 @@ def createSlider(label_, valmin_, valmax_):
     sin.on_changed(update_data)
     update_data(valmin_)
 
-def plot3D(x, y, z, legend='', points=True):
+def plot3D(x, y, z, legend='', points=True, color_='black'):
     z= np.reshape(z, (len(x), len(y)))
     X = np.arange(0, len(x), 1)
     Y = np.arange(0, len(y), 1)
@@ -48,9 +48,9 @@ def plot3D(x, y, z, legend='', points=True):
     X, Y = np.meshgrid(x, y)
 
     if points:
-        ax.scatter(X, Y, Z, antialiased=True, color='b')
+        ax.scatter(X, Y, Z, antialiased=True, color=color_)
     else:
-        ax.plot_wireframe(X, Y, Z, antialiased=True, color='black')
+        ax.plot_wireframe(X, Y, Z, antialiased=True, color=color_)
 
     ax.xaxis.set_major_formatter(FormatStrFormatter('%.2f'))
     ax.set_xticks(x[::2])#np.arange(0, len(x), 2))
