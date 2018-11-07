@@ -15,6 +15,17 @@ void handle_error(int x)
     exit(x);
 }
 
+void flush_cache()
+{
+    const int chache_size= 10240;
+    int cs= chache_size*1024/sizeof(double), i;
+    double *flush= (double *)calloc(cs, sizeof(double)), tmp = 0.0;
+    // #pragma omp parallel for reduction(+:tmp) private(i)
+    for (i = 0; i < cs; i++)
+        tmp += flush[i];
+    free(flush);
+}
+
 int main(int argc, char** argv)
 {
     pid_t pid= fork();
@@ -52,11 +63,17 @@ int main(int argc, char** argv)
         /* Add Total Instructions Executed to our EventSet */
         if (PAPI_add_event(EventSet, PAPI_BR_INS) != PAPI_OK)
             handle_error(1);
+        
+        if (PAPI_add_event(EventSet, PAPI_BR_MSP) != PAPI_OK)
+            handle_error(1);
+        
+        if (PAPI_add_event(EventSet, PAPI_L3_TCR) != PAPI_OK)
+            handle_error(1);
 
         if(PAPI_attach(EventSet, pid) != PAPI_OK)
             handle_error(1);
 
-        long long arr[2];
+        long long arr[8];
         while(1)
         {
             int status;
@@ -64,6 +81,7 @@ int main(int argc, char** argv)
             if (WIFEXITED(status))
                 break;
 
+            flush_cache();
             PAPI_start(EventSet);
             ptrace(PTRACE_CONT, pid, 0, 0);
         }
@@ -72,5 +90,7 @@ int main(int argc, char** argv)
         cout << endl;
         cout << "TOTAL INSTRUCTIONS : " << arr[0] << endl;
         cout << "BRANCH INSTRUCTIONS : " << arr[1] << endl;
+        cout << "BRANCH MISPREDICT : " << arr[2] << endl;
+        cout << "TOTAL CACHE READ L3 : " << arr[3] << endl;
     }
 }
