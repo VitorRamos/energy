@@ -1,9 +1,10 @@
 import pickle
 import numpy as np
 from scipy.optimize import least_squares
+import pandas as pd
 
 class powerModel:
-    def __init__(self, filename= ''):
+    def __init__(self, filename= '', power_model_=None, power_mode_n_=4):
         '''
             filename: load fited model
         '''
@@ -11,8 +12,12 @@ class powerModel:
         self.threads = []
         self.powers = []
         self.sensors = []
-        self.power_model= lambda x,f,p: x[0]*f**3*p+x[1]*f*p+x[2]+x[3]*(np.floor(p/17)+1)
+        if power_model_:
+            self.power_model= power_model_
+        else:
+            self.power_model= lambda x,f,p: x[0]*f**3*p+x[1]*f*p+x[2]+x[3]*(np.floor(p/17)+1)
         self.power_model_x= []
+        self.power_mode_n= power_mode_n_
         if filename:
             self.load(filename)
 
@@ -133,6 +138,16 @@ class powerModel:
                     
         return self.frequencies, self.threads, self.powers, self.sensors
 
+    def get_Dataframe(self):
+        '''
+            return a DataFrame of the measured values
+        '''
+        f= np.repeat(self.frequencies,len(self.threads))
+        p= np.tile(self.threads,len(self.frequencies))
+        df= pd.DataFrame(np.vstack((f,p,self.powers)).T, columns=['freq','thr','pw'])
+        return df
+
+
     def fit(self, verbose= 0):
         '''
         Fits the power model equation with the values loaded, need to call loadData first.
@@ -143,10 +158,10 @@ class powerModel:
         '''
         assert len(self.powers) > 0
         err= lambda x,f,p,y: self.power_model(x,f,p)-y
-        x0= np.ones(4)
+        x0= np.ones(self.power_mode_n)
         f= np.repeat(self.frequencies,len(self.threads))
         p= np.tile(self.threads,len(self.frequencies))
-        res_robust= least_squares(err, x0, loss='soft_l1', f_scale=0.1, args=(f, p, self.powers))
+        res_robust= least_squares(err, x0, loss='soft_l1', f_scale=1, args=(f, p, self.powers))
         self.power_model_x= res_robust.x
         if verbose > 0:
             res_robust
@@ -176,12 +191,13 @@ class powerModel:
             
         return self.power_model_x
     
-    def estimate(self, f, p):
+    def estimate(self, f, p, dataFrame=False):
         '''
         Estimetes the power with the model fited, need to call fit first
 
         f: list, frequency list
         p: list, number of cores list
+        dataFrame: bool, return Dataframe 
 
         return list of estimatives
         '''
@@ -189,9 +205,13 @@ class powerModel:
         f_len= len(f)
         f= np.repeat(f,len(p))
         p= np.tile(p,f_len)
-        return self.power_model(self.power_model_x,f,p)
+        pws= self.power_model(self.power_model_x,f,p)
+        if dataFrame:
+            df= pd.DataFrame(np.vstack((f,p,pws)).T, columns=['freq','thr','pw_est'])
+            return df
+        return pws
     
-    def error(self):
+    def error(self, absolute=False):
         '''
         Calculates the error from the measured values to the model
 
@@ -200,4 +220,7 @@ class powerModel:
         assert len(self.power_model_x)>0
         estimative= np.array(self.estimate(self.frequencies, self.threads))
         real= np.array(self.powers)
-        return np.sum(np.abs(real-estimative))/len(real)
+        if absolute:
+            return np.sum(np.abs(real-estimative))/len(real)
+
+        return np.max(np.abs( (real-estimative)/real ) )*100
