@@ -60,7 +60,7 @@ class monitorProcess:
                         while program.poll() == None:
                             if verbose > 0:
                                 print("Tempo", time.time()-ti,
-                                    "Frequencia ", f, " nThreads", thr)
+                                    "Frequencia ", self.cpu.get_frequencies(), " nThreads", thr)
 
                             tg = time.time()
                             info = {"time": time.time()-ti,
@@ -95,6 +95,8 @@ class monitorProcess:
             print("Error", e)
 
         os.chdir(current_dir)
+        if verbose > 0:
+            print("Saving")
         self.save(save_name)
         self.cpu.reset()
         # cpu.set_governors("userspace")
