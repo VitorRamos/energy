@@ -1,5 +1,5 @@
 
-all: hello papi event teste_ld teste_static
+all: hello papi event teste_ld teste_static rapl
 
 hello: hello.asm
 	 nasm -f elf64 hello.asm -o hello.o && ld hello.o -o hello
@@ -15,3 +15,6 @@ teste_ld: teste.cpp
 
 teste_static: teste.cpp
 	g++ -static teste.cpp -o teste
+
+rapl: rapl.cpp
+	g++ rapl.cpp libpapi.a -o rapl
