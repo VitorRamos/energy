@@ -8,3 +8,4 @@ sysctl -w kernel.nmi_watchdog=0
 # change frequency permition
 sudo chmod -R 666 /sys/devices/system/cpu/cpu*/cpufreq/
 sudo chmod -R 666 /sys/devices/system/cpu/cpu*/online
+sudo modprobe msr
