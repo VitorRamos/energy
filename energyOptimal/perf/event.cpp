@@ -1,4 +1,5 @@
 #include <iostream>
+#include <map>
 
 #include <cstdio>
 #include <cstdlib>
@@ -16,7 +17,8 @@
 #include <asm/unistd.h>
 #include <unistd.h>
 #include <inttypes.h>
-#include <map>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include <x86intrin.h>
 
@@ -93,12 +95,15 @@ void cache_test()
 
 int main(int argc, char **argv)
 {
-    cache_test();
-    return 0;
+    // cache_test();
+    // return 0;
     pid_t pid = fork();
     if (pid == 0)
     {
+        int fd= open("output",  O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
+        dup2(fd, STDOUT_FILENO);
         ptrace(PTRACE_TRACEME, 0, 0, 0);
+        // flush_cache();
         int ret = execl(argv[1], (const char *)argv + 1, NULL);
         if (ret < 0)
         {
@@ -147,7 +152,7 @@ int main(int argc, char **argv)
         pea.disabled = 1;
         pea.exclude_kernel = 1;
         pea.exclude_hv = 1;
-        // pea.sample_type= PERF_SAMPLE_TIME;
+        pea.sample_type= PERF_SAMPLE_CPU;
         // pea.sample_freq= 99;
         pea.read_format = PERF_FORMAT_GROUP | PERF_FORMAT_ID | PERF_FORMAT_TOTAL_TIME_ENABLED | PERF_FORMAT_TOTAL_TIME_RUNNING;
         fds[0] = syscall(__NR_perf_event_open, &pea, pid, -1, -1, 0);
@@ -163,7 +168,7 @@ int main(int argc, char **argv)
             pea.disabled = 1;
             pea.exclude_kernel = 1;
             pea.exclude_hv = 1;
-            // pea.sample_type= PERF_SAMPLE_TIME;
+            // pea.sample_type= PERF_SAMPLE_PERIOD;
             // pea.sample_freq= 99;
             pea.read_format = PERF_FORMAT_GROUP | PERF_FORMAT_ID | PERF_FORMAT_TOTAL_TIME_ENABLED | PERF_FORMAT_TOTAL_TIME_RUNNING;
             fds[i] = syscall(__NR_perf_event_open, &pea, pid, -1, fds[0] /*!!!*/, 0);
@@ -178,21 +183,32 @@ int main(int argc, char **argv)
         pea.exclude_hv = 1;
         pea.read_format = PERF_FORMAT_GROUP | PERF_FORMAT_ID | PERF_FORMAT_TOTAL_TIME_ENABLED | PERF_FORMAT_TOTAL_TIME_RUNNING;
 
-        fds[5] = syscall(__NR_perf_event_open, &pea, pid, -1, fds[0] /*!!!*/, 0);
-        ioctl(fds[5], PERF_EVENT_IOC_ID, &ids[5]);
-        aux[ids[5]] = PERF_COUNT_HW_CACHE_LL;
+        fds[4] = syscall(__NR_perf_event_open, &pea, pid, -1, fds[0] /*!!!*/, 0);
+        ioctl(fds[4], PERF_EVENT_IOC_ID, &ids[4]);
+        aux[ids[4]] = PERF_COUNT_HW_CACHE_LL;
 
         ioctl(fds[0], PERF_EVENT_IOC_RESET, PERF_IOC_FLAG_GROUP);
         ioctl(fds[0], PERF_EVENT_IOC_ENABLE, PERF_IOC_FLAG_GROUP);
-        while (1)
+        int status;
+        waitpid(pid, &status, 0);
+        ptrace(PTRACE_CONT, pid, 0, 0);
+        int acc= 0;
+        while(1)
         {
-            int status;
-            waitpid(pid, &status, 0);
+            waitpid(pid, &status, WNOHANG);
             if (WIFEXITED(status))
                 break;
-
-            flush_cache();
-            ptrace(PTRACE_CONT, pid, 0, 0);
+        
+            usleep(1e5);
+            read(fds[0], buf, sizeof(buf));
+            // ioctl(fds[0], PERF_EVENT_IOC_RESET, PERF_IOC_FLAG_GROUP);
+            // for (i = 0; i < rf->nr; i++)
+            // {
+                // acc+= rf->values[0].value;
+            //     vals[i] = rf->values[i].value;
+            //     cout << aux_str[aux[rf->values[i].id]] << " : " << rf->values[i].value << endl;
+            // }
+            // cout << endl;
         }
         ioctl(fds[0], PERF_EVENT_IOC_DISABLE, PERF_IOC_FLAG_GROUP);
         read(fds[0], buf, sizeof(buf));
@@ -202,5 +218,6 @@ int main(int argc, char **argv)
             vals[i] = rf->values[i].value;
             cout << aux_str[aux[rf->values[i].id]] << " : " << rf->values[i].value << endl;
         }
+        cout << acc << endl;
     }
 }

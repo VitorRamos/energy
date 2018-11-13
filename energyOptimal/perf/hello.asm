@@ -15,7 +15,7 @@ _start:
     mov     rdx, 13
     syscall
     add     DWORD[rbp-0x4], 1
-    cmp     DWORD[rbp-0x4], 1000
+    cmp     DWORD[rbp-0x4], 100000
     jne     loop
     
     pop rbp
