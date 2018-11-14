@@ -1,4 +1,7 @@
+#include <iostream>
 #include <x86intrin.h>
+
+using namespace std;
 
 void flush_cache()
 {
@@ -27,7 +30,7 @@ uint64_t time_mem_acss()
     return b-a;
 }
 
-void cache_test()
+int main()
 {
     acess_me= new uint32_t;
     *acess_me= 0xabcd;
@@ -47,4 +50,3 @@ void cache_test()
     }
     cout << mean/cmax << endl;
 }
-
