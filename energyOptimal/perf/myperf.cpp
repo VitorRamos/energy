@@ -40,7 +40,6 @@ int main(int argc, char** argv)
     ev.add_event(PERF_TYPE_HARDWARE, PERF_COUNT_HW_CACHE_LL);
     ev.add_event(PERF_TYPE_HARDWARE, PERF_COUNT_HW_BRANCH_INSTRUCTIONS);
     ev.add_event(PERF_TYPE_HARDWARE, PERF_COUNT_HW_BRANCH_MISSES);
-    
     ev.reset();
     ev.enable();
     int status;
@@ -54,6 +53,7 @@ int main(int argc, char** argv)
         usleep(1e4);
         ev.sample();
         rapl.sample();
+        // ev.wait_event();
         // ev.reset();
     }
     ofstream save("hello.csv");

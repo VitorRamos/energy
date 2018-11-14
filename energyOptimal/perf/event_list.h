@@ -3,7 +3,7 @@
 
 #include <iostream>
 #include <vector>
-
+#include <signal.h>
 class event_list
 {
     struct read_format
@@ -26,6 +26,7 @@ public:
     void enable();
     void disable();
     void reset();
+    static void perf_event_handler(int signum, siginfo_t* info, void* ucontext);
     void sample();
     std::ostream& to_csv(std::ostream& out, std::vector<std::string> columns);
     void wait_event();

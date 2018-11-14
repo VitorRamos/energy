@@ -4,6 +4,8 @@
 #include <linux/perf_event.h>
 #include <asm/unistd.h>
 #include <sys/ioctl.h>
+#include <sys/fcntl.h>
+#include <sys/mman.h>
 #include <unistd.h>
 #include <memory.h>
 #include <poll.h>
@@ -26,16 +28,37 @@ void event_list::add_event(int type_id, uint64_t config)
     pea.exclude_kernel = 1;
     pea.exclude_hv = 1;
 
-    // overflow test
-    // pea.sample_period= 1; 
     // pea.sample_type= PERF_SAMPLE_IP;
+    // pea.sample_period= 1000;
     // pea.wakeup_events= 1;
-    
+
     pea.read_format = PERF_FORMAT_GROUP | PERF_FORMAT_ID | PERF_FORMAT_TOTAL_TIME_ENABLED | PERF_FORMAT_TOTAL_TIME_RUNNING;
     if(fds.size() == 0) // group leader
         fds.push_back( syscall(__NR_perf_event_open, &pea, pid, -1, -1, 0) );
     else
         fds.push_back( syscall(__NR_perf_event_open, &pea, pid, -1, fds[0], 0) );
+
+    // Sampling with interruption
+    // struct sigaction sa;
+    // memset(&sa, 0, sizeof(struct sigaction));
+    // sa.sa_sigaction = perf_event_handler;
+    // sa.sa_flags = SA_SIGINFO;
+    // if (sigaction(SIGIO, &sa, NULL) < 0)
+    //     cerr << "Error setting up signal handler\n";
+    
+    // fcntl(fds.back(), F_SETFL, O_NONBLOCK|O_ASYNC);
+    // fcntl(fds.back(), F_SETSIG, SIGIO);
+    // fcntl(fds.back(), F_SETOWN, getpid());
+    // ioctl(fds.back(), PERF_EVENT_IOC_REFRESH, 1);
+
+    // Sampling with mmap
+    // perf_event_mmap_page* data;
+    // const int PAGE_SIZE= sysconf(_SC_PAGESIZE);
+    // const int DATA_SIZE= PAGE_SIZE;
+    // const int MMAP_SIZE= PAGE_SIZE+DATA_SIZE;
+    // data= (perf_event_mmap_page*)mmap(NULL, MMAP_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fds.back(), 0);
+    // if(data == MAP_FAILED)
+    //     cerr << "Error open memory map" << endl;
 
     ioctl(fds.back(), PERF_EVENT_IOC_ID, &aux);
     ids.push_back(aux);
@@ -63,6 +86,16 @@ void event_list::sample()
     for(int i=0; i<rf->nr; i++)
         row.push_back(rf->values[i].value);
     samples.push_back(row);
+}
+void event_list::perf_event_handler(int signum, siginfo_t* info, void* ucontext)
+{
+    if(info->si_code != POLL_HUP) {
+        // Only POLL_HUP should happen.
+        cerr << "Error interrupt" << endl;
+        exit(EXIT_FAILURE);
+    }
+    cout << "Interruption" << endl;
+    ioctl(info->si_fd, PERF_EVENT_IOC_REFRESH, 1);
 }
 ostream& event_list::to_csv(ostream& out, vector<string> columns)
 {
@@ -102,18 +135,19 @@ void event_list::wait_event()
 {
     // overflow test
     pollfd aux[1];
+    aux[0].events= POLLIN;
     aux[0].fd= fds[0];
-    // aux[0].events= POLLIN;
     poll(aux, 1, 500);
     for(int i=0; i<1; i++)
     {
         if(aux[i].revents & POLLIN)
         {
             cout << "Data ready" << endl;
+            sample();
         }
         if(aux[i].revents & POLLHUP)
         {
-            // cout << "Hangup " << endl;
+            cout << "Hangup " << endl;
         }
     }
 }

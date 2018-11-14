@@ -1,20 +1,8 @@
+CC=g++
 
-all: hello papi event teste_ld teste_static rapl
+all: myperf
 
-hello: hello.asm
-	 nasm -f elf64 hello.asm -o hello.o && ld hello.o -o hello
-
-papi: papi.cpp
-	g++ papi.cpp -lpapi -o papi_perf
-
-event: event.cpp
-	g++ event.cpp -o event_perf
-
-teste_ld: teste.cpp
-	g++ teste.cpp -o teste
-
-teste_static: teste.cpp
-	g++ -static teste.cpp -o teste
-
-rapl: rapl.cpp
-	g++ rapl.cpp libpapi.a -o rapl
+myperf: myperf.o rapl.o event_list.o
+myperf.o: myperf.cpp
+rapl.o: rapl.cpp
+event_list.o: event_list.cpp
