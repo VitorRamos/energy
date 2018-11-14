@@ -12,7 +12,7 @@ def run_all(bench, prog):
         data= subprocess.Popen([bench,prog],stdout=subprocess.PIPE).stdout.readlines()
         n= []
         names= []
-        for c in data[1:]:
+        for c in data:
             aux= str(c)
             names.append(str(aux.split(':')[0]))
             n.append(int(str(aux.split(':')[1])[:-3]))
