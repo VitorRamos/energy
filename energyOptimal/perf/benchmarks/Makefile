@@ -8,3 +8,6 @@ simple_dynamic_ld: simple_loop.cpp
 
 simple_static_ld: simple_loop.cpp
 	g++ -static simple_loop.cpp -o simple_static_ld
+
+clean:
+	rm *.o hello simple_dynamic_ld simple_static_ld
