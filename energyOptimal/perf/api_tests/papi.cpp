@@ -6,6 +6,9 @@
 #include <math.h>
 #include <sys/ptrace.h>
 #include <sys/wait.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 using namespace std;
 
@@ -31,7 +34,10 @@ int main(int argc, char** argv)
     pid_t pid= fork();
     if(pid == 0)
     {
+        int fd= open("output",  O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
+        dup2(fd, STDOUT_FILENO);
         ptrace(PTRACE_TRACEME, 0, 0, 0);
+        // flush_cache();
         int ret= execl(argv[1], (const char*)argv+1, NULL);
         if(ret < 0)
         {
@@ -73,21 +79,19 @@ int main(int argc, char** argv)
         if(PAPI_attach(EventSet, pid) != PAPI_OK)
             handle_error(1);
 
+        int status;
+        waitpid(pid, &status, 0);
+        PAPI_start(EventSet);            
+        ptrace(PTRACE_CONT, pid, 0, 0);
         long long arr[8];
         while(1)
         {
-            int status;
             waitpid(pid, &status, 0);
             if (WIFEXITED(status))
                 break;
-
-            flush_cache();
-            PAPI_start(EventSet);
-            ptrace(PTRACE_CONT, pid, 0, 0);
         }
         PAPI_stop(EventSet, arr);
         PAPI_read(EventSet, arr);
-        cout << endl;
         cout << "TOTAL INSTRUCTIONS : " << arr[0] << endl;
         cout << "BRANCH INSTRUCTIONS : " << arr[1] << endl;
         cout << "BRANCH MISPREDICT : " << arr[2] << endl;

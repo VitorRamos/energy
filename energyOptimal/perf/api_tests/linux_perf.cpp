@@ -56,54 +56,15 @@ void flush_cache()
     free(flush);
 }
 
-uint32_t* acess_me;
-
-void sink(uint32_t x) {
-  (void)x;
-}
-
-uint64_t time_mem_acss()
-{
-    uint64_t a, b;
-    a = __rdtsc();
-    sink(acess_me[0]);
-    _mm_lfence();
-    b = __rdtsc();
-    return b-a;
-}
-
-void cache_test()
-{
-    acess_me= new uint32_t;
-    *acess_me= 0xabcd;
-    double cmax= 100, mean= 0;
-    for(int i=0; i<cmax; i++)
-    {
-        flush_cache();
-        //_mm_clflush((void*)(acess_me)); //flush the specifc adress
-        mean+=time_mem_acss();
-    }
-    cout << mean/cmax << endl;
-    sink(acess_me[0]);
-    mean=0;
-    for(int i=0; i<cmax; i++)
-    {
-        mean+=time_mem_acss();
-    }
-    cout << mean/cmax << endl;
-}
-
 int main(int argc, char **argv)
 {
-    // cache_test();
-    // return 0;
     pid_t pid = fork();
     if (pid == 0)
     {
         int fd= open("output",  O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
         dup2(fd, STDOUT_FILENO);
-        ptrace(PTRACE_TRACEME, 0, 0, 0);
         // flush_cache();
+        ptrace(PTRACE_TRACEME, 0, 0, 0);
         int ret = execl(argv[1], (const char *)argv + 1, NULL);
         if (ret < 0)
         {
@@ -150,9 +111,10 @@ int main(int argc, char **argv)
         pea.size = sizeof(struct perf_event_attr);
         pea.config = pmcs[0];
         pea.disabled = 1;
+        pea.pinned= 1;
         pea.exclude_kernel = 1;
         pea.exclude_hv = 1;
-        pea.sample_type= PERF_SAMPLE_CPU;
+        // pea.sample_type= PERF_SAMPLE_CPU;
         // pea.sample_freq= 99;
         pea.read_format = PERF_FORMAT_GROUP | PERF_FORMAT_ID | PERF_FORMAT_TOTAL_TIME_ENABLED | PERF_FORMAT_TOTAL_TIME_RUNNING;
         fds[0] = syscall(__NR_perf_event_open, &pea, pid, -1, -1, 0);
@@ -195,29 +157,16 @@ int main(int argc, char **argv)
         int acc= 0;
         while(1)
         {
-            waitpid(pid, &status, WNOHANG);
+            waitpid(pid, &status, 0);
             if (WIFEXITED(status))
                 break;
-        
-            usleep(1e5);
-            read(fds[0], buf, sizeof(buf));
-            // ioctl(fds[0], PERF_EVENT_IOC_RESET, PERF_IOC_FLAG_GROUP);
-            // for (i = 0; i < rf->nr; i++)
-            // {
-                // acc+= rf->values[0].value;
-            //     vals[i] = rf->values[i].value;
-            //     cout << aux_str[aux[rf->values[i].id]] << " : " << rf->values[i].value << endl;
-            // }
-            // cout << endl;
         }
         ioctl(fds[0], PERF_EVENT_IOC_DISABLE, PERF_IOC_FLAG_GROUP);
         read(fds[0], buf, sizeof(buf));
-        cout << endl;
         for (i = 0; i < rf->nr; i++)
         {
             vals[i] = rf->values[i].value;
             cout << aux_str[aux[rf->values[i].id]] << " : " << rf->values[i].value << endl;
         }
-        cout << acc << endl;
     }
 }
