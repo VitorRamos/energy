@@ -1,6 +1,9 @@
 #include <perfmon/pfmlib.h>
 #include <perfmon/pfmlib_perf_event.h>
 
+#include <math.h>
+#include <numeric>
+
 #include <poll.h>
 #include <iostream>
 #include <sys/ioctl.h>
@@ -10,6 +13,9 @@
 #include <sys/wait.h>
 #include <sys/mman.h>
 #include <memory.h>
+
+#include <vector>
+#include <tuple>
 
 using namespace std;
 
@@ -29,7 +35,7 @@ pid_t create_wrokload(char** argv)
     return pid;
 }
 
-int total=0;
+int total=0, nsamples=0;
 static void perf_event_handler(int signum, siginfo_t* info, void* ucontext)
 {
     if(info->si_code != POLL_HUP) {
@@ -42,11 +48,12 @@ static void perf_event_handler(int signum, siginfo_t* info, void* ucontext)
     ioctl(info->si_fd, PERF_EVENT_IOC_RESET, 1);
     ioctl(info->si_fd, PERF_EVENT_IOC_REFRESH, 1);
     total+=counter;
+    nsamples++;
 }
 
-void sample1(char** argv, int period)
+tuple<int64_t,int64_t> sample1(char** argv, int period)
 {
-    total= 0;
+    nsamples=total= 0;
     pid_t pid= create_wrokload(argv);
     struct sigaction sa;
     memset(&sa, 0, sizeof(struct sigaction));
@@ -93,14 +100,16 @@ void sample1(char** argv, int period)
     int64_t counter;
     read(fd, &counter, sizeof(int64_t));
     total+=counter;
-    cout << total << endl;
+    // cout << total << " " << nsamples << endl;
 
     close(fd);
+
+    return {total, nsamples};
 }
 
-void sample2(char** argv, int period, int wk_events)
+tuple<int64_t,int64_t> sample2(char** argv, int period, int wk_events)
 {
-    total= 0;
+    nsamples=total= 0;
     int64_t counter;
     pid_t pid= create_wrokload(argv);
 
@@ -150,6 +159,7 @@ void sample2(char** argv, int period, int wk_events)
             read(fd, &counter, sizeof(int64_t));
             ioctl(fd, PERF_EVENT_IOC_RESET, 1);
             total+=counter;
+            nsamples++;
         }
         if(aux[0].revents & POLLHUP)
         {
@@ -160,14 +170,16 @@ void sample2(char** argv, int period, int wk_events)
     ioctl(fd, PERF_EVENT_IOC_DISABLE, 0);
     read(fd, &counter, sizeof(int64_t));
     total+=counter;
-    cout << total << endl;
+    // cout << total <<  " " << nsamples << endl;
 
     close(fd);
+
+    return {total, nsamples};
 }
 
-void sample3(char** argv, int period)
+tuple<int64_t,int64_t> sample3(char** argv, int period)
 {
-    total= 0;
+    nsamples=total= 0;
     pid_t pid= create_wrokload(argv);
 
     perf_event_attr pe;
@@ -200,20 +212,48 @@ void sample3(char** argv, int period)
         read(fd, &counter, sizeof(int64_t));
         ioctl(fd, PERF_EVENT_IOC_RESET, 1);
         total+=counter;
+        nsamples++;
     }
 // End monitoring
     ioctl(fd, PERF_EVENT_IOC_DISABLE, 0);
     int64_t counter;
     read(fd, &counter, sizeof(int64_t));
     total+=counter;
-    cout << total << endl;
+    // cout << total << " " << nsamples << endl;
 
     close(fd);
+    return {total,nsamples};
 }
+
 
 int main(int argc, char** argv)
 {
-    sample1(argv, 10000);
-    sample2(argv, 1000, 1000);
-    sample3(argv, 100);
+    string method_names[3]= {"Interruption", "Wait", "Time"};
+    vector<int64_t> total_mean[3], total_sample[3];
+    for(int i=0; i<100; i++)
+    {
+        int64_t mean_1, mean_2, mean_3;
+        int64_t s_1, s_2, s_3;
+        tie(mean_1, s_1)= sample1(argv, 32000);
+        tie(mean_2, s_2)= sample2(argv, 100, 10);
+        tie(mean_3, s_3)= sample3(argv, 250);
+        total_mean[0].push_back(mean_1);
+        total_mean[1].push_back(mean_2);
+        total_mean[2].push_back(mean_3);
+        total_sample[0].push_back(s_1);
+        total_sample[1].push_back(s_2);
+        total_sample[2].push_back(s_3);
+        cout << ".";
+        cout.flush();
+    }
+    cout << endl;
+    for(int i=0; i<3; i++)
+    {
+        double mean= accumulate( total_mean[i].begin(), total_mean[i].end(), 0.0)/total_mean[i].size();
+        double sq_sum = inner_product(total_mean[i].begin(), total_mean[i].end(), total_mean[i].begin(), 0.0);
+        double stdev = sqrt(sq_sum / total_mean[i].size() - mean * mean);
+        cout << "Sampling method " << method_names[i] << " : " << mean << " +- " << stdev << " ";
+        mean= accumulate( total_sample[i].begin(), total_sample[i].end(), 0.0)/total_sample[i].size();
+        cout << " nsamples " << mean << endl;
+    }
 }
