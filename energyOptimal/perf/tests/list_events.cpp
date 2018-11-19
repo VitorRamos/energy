@@ -7,6 +7,7 @@ using namespace std;
 
 class events
 {
+    int generate_header= 1;
     public:
     events()
     {
@@ -30,6 +31,7 @@ class events
         int total_supported_events=0, total_available_events=0, total_working_events=0, total_pmus= 0;
         pfm_pmu_info_t pinfo;
         memset(&pinfo, 0, sizeof(pinfo));
+        if(generate_header) cout << "// ";
         cout << "Supported pmu models" << endl;
         for(int i=PFM_PMU_NONE; i<PFM_PMU_MAX; i++)
         {
@@ -39,11 +41,13 @@ class events
             {
                 total_pmus++;
                 total_supported_events+= pinfo.nevents;
+                if(generate_header) cout << "// ";
                 cout << pinfo.name << " " << pinfo.desc << " " << pinfo.nevents << endl;
                 total_working_events+=list_pmu_events(pfm_pmu_t(i));
             }
             total_available_events+=pinfo.nevents;
         }
+        if(generate_header) cout << "// ";
         cout << total_pmus << " pmus, supported " << total_working_events << " events" << endl;
     }
     int list_pmu_events(pfm_pmu_t pmu)
@@ -71,9 +75,17 @@ class events
                 memset(&raw, 0, sizeof(raw));
                 memset(&hw, 0, sizeof(hw));
                 raw.attr= &hw;
-                pfm_get_os_event_encoding(info.name, PFM_PLM0 | PFM_PLM3, PFM_OS_PERF_EVENT_EXT, &raw);
-                cout << "\t" << info.name << " " << raw.attr->type << " " << raw.attr->config << endl;
-                total_working_events++;
+                if(pfm_get_os_event_encoding(info.name, PFM_PLM0 | PFM_PLM3, PFM_OS_PERF_EVENT_EXT, &raw) == PFM_SUCCESS)
+                {
+                    if(generate_header)
+                    {
+                        cout << "#define " << info.name << "_TYPE " << raw.attr->type << endl;
+                        cout << "#define " << info.name << "_CONFIG " << raw.attr->config << endl;    
+                    }
+                    else
+                        cout << "\t" << info.name << " " << raw.attr->type << " " << raw.attr->config << endl;
+                    total_working_events++;
+                }
             }
         }
         return total_working_events;
@@ -83,7 +95,7 @@ class events
 int main()
 {
     events e;
-    e.supported_pmus();
+    //e.supported_pmus();
     e.detected_pmus();
-    e.list_pmu_events(PFM_PMU_INTEL_RAPL);
+    //e.list_pmu_events(PFM_PMU_INTEL_RAPL);
 }
