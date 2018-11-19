@@ -1,5 +1,5 @@
 CC=g++
- 
+
 all: cache_test list_events papi_rapl read_rapl sample_teste
 
 papi_rapl: papi_rapl.cpp

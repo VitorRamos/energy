@@ -4,8 +4,12 @@
 #include <math.h>
 #include <numeric>
 
-#include <poll.h>
 #include <iostream>
+#include <vector>
+#include <tuple>
+
+
+#include <poll.h>
 #include <sys/ioctl.h>
 #include <sys/fcntl.h>
 #include <signal.h>
@@ -14,8 +18,6 @@
 #include <sys/mman.h>
 #include <memory.h>
 
-#include <vector>
-#include <tuple>
 
 using namespace std;
 
