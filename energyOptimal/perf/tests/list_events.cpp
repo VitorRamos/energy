@@ -3,12 +3,17 @@
 #include <memory.h>
 
 #include <iostream>
+#include <algorithm>
+#include <string>
+#include <map>
+#include <tuple>
 using namespace std;
 
 class events
 {
+    map<tuple<uint64_t, uint64_t>, string> evs;
     int generate_header= 1;
-    public:
+public:
     events()
     {
         if (pfm_initialize() != PFM_SUCCESS)
@@ -50,6 +55,65 @@ class events
         if(generate_header) cout << "// ";
         cout << total_pmus << " pmus, supported " << total_working_events << " events" << endl;
     }
+    int show_event(pfm_event_info_t info)
+    {
+        int total_working_events= 0;
+        pfm_perf_encode_arg_t raw;
+        perf_event_attr_t hw;
+        pfm_event_attr_info_t att_info;
+        memset(&raw, 0, sizeof(raw));
+        memset(&hw, 0, sizeof(hw));
+        raw.attr= &hw;
+        memset(&att_info, 0, sizeof(att_info));
+        string str_event= string(info.name);
+        if(pfm_get_os_event_encoding(str_event.c_str(), PFM_PLM0 | PFM_PLM3, PFM_OS_PERF_EVENT_EXT, &raw) == PFM_SUCCESS)
+        {
+            if(generate_header)
+            {
+                while(str_event.find(':') != string::npos)
+                    str_event.replace(str_event.find(':'),1,"_");
+                while(str_event.find('-') != string::npos)
+                    str_event.replace(str_event.find('-'),1,"_");
+                cout << "#define " << str_event << "_TYPE " << raw.attr->type << endl;
+                cout << "#define " << str_event << "_CONFIG " << raw.attr->config << endl;    
+            }
+            else
+                cout << "\t" << info.name << " " << raw.attr->type << " " << raw.attr->config << endl;
+            total_working_events++;
+            evs[make_tuple(raw.attr->type, raw.attr->config)]= str_event;
+        }
+        for(int i=0; i<info.nattrs; i++)
+        {
+            memset(&raw, 0, sizeof(raw));
+            memset(&hw, 0, sizeof(hw));
+            raw.attr= &hw;
+            memset(&att_info, 0, sizeof(att_info));
+            if(pfm_get_event_attr_info(info.idx, i, PFM_OS_NONE, &att_info) == PFM_SUCCESS)
+            {
+                string str_event= string(info.name)+":"+string(att_info.name);
+                if(pfm_get_os_event_encoding(str_event.c_str(), PFM_PLM0 | PFM_PLM3, PFM_OS_PERF_EVENT_EXT, &raw) == PFM_SUCCESS)
+                {
+                    if(evs.find(make_tuple(raw.attr->type, raw.attr->config)) != evs.end())
+                        continue;
+                    if(generate_header)
+                    {
+                        while(str_event.find(':') != string::npos)
+                            str_event.replace(str_event.find(':'),1,"_");
+                        while(str_event.find('-') != string::npos)
+                            str_event.replace(str_event.find('-'),1,"_");
+                        cout << "#define " << str_event << "_TYPE " << raw.attr->type << endl;
+                        cout << "#define " << str_event << "_CONFIG " << raw.attr->config << endl;    
+                    }
+                    else
+                        cout << "\t" << info.name << " " << raw.attr->type << " " << raw.attr->config << endl;
+                    total_working_events++;
+                    if(evs.find(make_tuple(raw.attr->type, raw.attr->config)) == evs.end())
+                        evs[make_tuple(raw.attr->type, raw.attr->config)]= str_event;
+                }
+            }
+        }
+        return total_working_events;
+    }
     int list_pmu_events(pfm_pmu_t pmu)
     {
         int i, ret, total_working_events= 0;
@@ -67,25 +131,9 @@ class events
         {
             if (pfm_get_event_info(i, PFM_OS_PERF_EVENT, &info) != PFM_SUCCESS)
                 cerr << "cannot get event info" << endl;
-
             if(pinfo.is_present)
             {
-                pfm_perf_encode_arg_t raw;
-                perf_event_attr_t hw;
-                memset(&raw, 0, sizeof(raw));
-                memset(&hw, 0, sizeof(hw));
-                raw.attr= &hw;
-                if(pfm_get_os_event_encoding(info.name, PFM_PLM0 | PFM_PLM3, PFM_OS_PERF_EVENT_EXT, &raw) == PFM_SUCCESS)
-                {
-                    if(generate_header)
-                    {
-                        cout << "#define " << info.name << "_TYPE " << raw.attr->type << endl;
-                        cout << "#define " << info.name << "_CONFIG " << raw.attr->config << endl;    
-                    }
-                    else
-                        cout << "\t" << info.name << " " << raw.attr->type << " " << raw.attr->config << endl;
-                    total_working_events++;
-                }
+                total_working_events+=show_event(info);
             }
         }
         return total_working_events;
@@ -97,5 +145,5 @@ int main()
     events e;
     //e.supported_pmus();
     e.detected_pmus();
-    //e.list_pmu_events(PFM_PMU_INTEL_RAPL);
+    // e.list_pmu_events(PFM_PMU_INTEL_SNB_EP);
 }
