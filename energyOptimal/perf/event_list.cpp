@@ -32,6 +32,7 @@ void event_list::add_event(int type_id, uint64_t config)
     pea.disabled = 1;
     pea.exclude_kernel = 1;
     pea.exclude_hv = 1;
+    pea.inherit= 1;
 
     // pea.sample_type= PERF_SAMPLE_IP;
     // pea.sample_period= 1000;
@@ -86,7 +87,7 @@ void event_list::sample()
     read(fds[0], buff, 4096);
     ioctl(fds[0], PERF_EVENT_IOC_RESET, PERF_IOC_FLAG_GROUP);
     read_format *rf= (read_format*)buff;
-    vector<int> row;
+    vector<uint64_t> row;
     row.push_back(rf->time_running);
     for(int i=0; i<rf->nr; i++)
         row.push_back(rf->values[i].value);

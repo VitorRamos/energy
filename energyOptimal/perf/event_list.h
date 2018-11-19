@@ -18,7 +18,7 @@ class event_list
         } values[];
     };
     std::vector<int> fds, ids;
-    std::vector<std::vector<int>> samples;
+    std::vector<std::vector<uint64_t>> samples;
     int pid;
 public:
     event_list(int pid);
