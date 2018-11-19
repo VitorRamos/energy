@@ -54,7 +54,7 @@ char** convert(const vector<string>& v)
 
 int main(int argc, char** argv)
 {
-    //vector<vector<string>> args= {{"benchmarks/hello"}, {"benchmarks/hello"}};
+    vector<vector<string>> args= {{"benchmarks/hello"}, {"benchmarks/hello"}};
     vector<vector<string>> args;
     ifstream files("benchmarks/polybench/files.txt");
     string names;
@@ -102,4 +102,30 @@ int main(int argc, char** argv)
         rapl.to_csv(*output);
         cnt++;
     }
+
+    // pid_t pid = create_wrokload(argv+1);
+    // RAPL rapl;
+    // event_list ev(pid);
+    // ev.add_event(PERF_TYPE_HARDWARE, PERF_COUNT_HW_INSTRUCTIONS);
+    // ev.add_event(PERF_TYPE_HARDWARE, PERF_COUNT_HW_CACHE_LL);
+    // ev.add_event(PERF_TYPE_HARDWARE, PERF_COUNT_HW_BRANCH_INSTRUCTIONS);
+    // ev.add_event(PERF_TYPE_HARDWARE, PERF_COUNT_HW_BRANCH_MISSES);
+    // ev.reset();
+    // ev.enable();
+    // int status;
+    // waitpid(pid, &status, 0);
+    // ptrace(PTRACE_CONT, pid, 0, 0);
+    // while(1)
+    // {
+    //     waitpid(pid, &status, WNOHANG);
+    //     if (WIFEXITED(status))
+    //         break;
+    //     usleep(1e4);
+    //     // ev.wait_event();
+    //     // ev.reset();
+    // }
+    // ev.sample();
+    // rapl.sample();
+    // ev.to_csv(cout, {"instructions", "cache_ll", "branch_instructions", "branch_misses"});
+    // rapl.to_csv(cout);
 }

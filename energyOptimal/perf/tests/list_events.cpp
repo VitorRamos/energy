@@ -19,42 +19,6 @@ public:
         if (pfm_initialize() != PFM_SUCCESS)
             cerr << "cannot initialize library" << endl;
     }
-    void supported_pmus()
-    {
-        pfm_pmu_info_t pinfo;
-        memset(&pinfo, 0, sizeof(pinfo));
-        cout << "Supported pmu models" << endl;
-        for(int i=PFM_PMU_NONE; i<PFM_PMU_MAX; i++)
-        {
-            if (pfm_get_pmu_info(pfm_pmu_t(i), &pinfo) != PFM_SUCCESS)
-                continue;
-            cout << pinfo.name << " " << pinfo.desc << endl;
-        }
-    }
-    void detected_pmus()
-    {
-        int total_supported_events=0, total_available_events=0, total_working_events=0, total_pmus= 0;
-        pfm_pmu_info_t pinfo;
-        memset(&pinfo, 0, sizeof(pinfo));
-        if(generate_header) cout << "// ";
-        cout << "Supported pmu models" << endl;
-        for(int i=PFM_PMU_NONE; i<PFM_PMU_MAX; i++)
-        {
-            if (pfm_get_pmu_info(pfm_pmu_t(i), &pinfo) != PFM_SUCCESS)
-                continue;
-            if(pinfo.is_present)
-            {
-                total_pmus++;
-                total_supported_events+= pinfo.nevents;
-                if(generate_header) cout << "// ";
-                cout << pinfo.name << " " << pinfo.desc << " " << pinfo.nevents << endl;
-                total_working_events+=list_pmu_events(pfm_pmu_t(i));
-            }
-            total_available_events+=pinfo.nevents;
-        }
-        if(generate_header) cout << "// ";
-        cout << total_pmus << " pmus, supported " << total_working_events << " events" << endl;
-    }
     int show_event(pfm_event_info_t info)
     {
         int total_working_events= 0;
@@ -117,7 +81,7 @@ public:
     }
     int list_pmu_events(pfm_pmu_t pmu)
     {
-        int i, ret, total_working_events= 0;
+        int i, ret, total_working_configs= 0, total_working_events= 0;
         pfm_event_info_t info;
         pfm_pmu_info_t pinfo;
         memset(&info, 0, sizeof(info));
@@ -134,11 +98,49 @@ public:
                 cerr << "cannot get event info" << endl;
             if(pinfo.is_present)
             {
-                total_working_events+=show_event(info);
+                total_working_configs+=show_event(info);
+                total_working_events+= total_working_configs > 0;
             }
         }
-        return total_working_events;
+        return total_working_configs;
     }
+    void supported_pmus()
+    {
+        pfm_pmu_info_t pinfo;
+        memset(&pinfo, 0, sizeof(pinfo));
+        cout << "Supported pmu models" << endl;
+        for(int i=PFM_PMU_NONE; i<PFM_PMU_MAX; i++)
+        {
+            if (pfm_get_pmu_info(pfm_pmu_t(i), &pinfo) != PFM_SUCCESS)
+                continue;
+            cout << pinfo.name << " " << pinfo.desc << endl;
+        }
+    }
+    void detected_pmus()
+    {
+        int total_supported_events=0, total_available_events=0, total_working_events=0, total_pmus= 0;
+        pfm_pmu_info_t pinfo;
+        memset(&pinfo, 0, sizeof(pinfo));
+        if(generate_header) cout << "// ";
+        cout << "Supported pmu models" << endl;
+        for(int i=PFM_PMU_NONE; i<PFM_PMU_MAX; i++)
+        {
+            if (pfm_get_pmu_info(pfm_pmu_t(i), &pinfo) != PFM_SUCCESS)
+                continue;
+            if(pinfo.is_present)
+            {
+                total_pmus++;
+                total_supported_events+= pinfo.nevents;
+                if(generate_header) cout << "// ";
+                cout << pinfo.name << " " << pinfo.desc << " " << pinfo.nevents << endl;
+                total_working_events+=list_pmu_events(pfm_pmu_t(i));
+            }
+            total_available_events+=pinfo.nevents;
+        }
+        if(generate_header) cout << "// ";
+        cout << total_pmus << " pmus, supported " << total_working_events << " events" << endl;
+    }
+    
 };
 
 int main()
