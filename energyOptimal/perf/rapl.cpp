@@ -130,9 +130,19 @@ ostream& RAPL::to_csv(ostream& out)
     }
     return out;
 }
+void RAPL::delete_samples()
+{
+    samples.clear();
+}
 RAPL::RAPL()
 {
     detect_packages();
     detect_rapl_events();
     create_event_set();
+}
+RAPL::~RAPL()
+{
+    for(int i=0; i<package_map.size(); i++)
+        for(int j=0; j<rapl_evs.size(); j++)
+            close(fds[i][j]);
 }

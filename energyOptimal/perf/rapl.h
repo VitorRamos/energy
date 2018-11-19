@@ -25,5 +25,7 @@ private:
 public:
     void sample();
     std::ostream& to_csv(std::ostream& out);
+    void delete_samples();
     RAPL();
+    ~RAPL();
 };

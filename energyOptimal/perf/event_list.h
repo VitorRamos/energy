@@ -22,6 +22,7 @@ class event_list
     int pid;
 public:
     event_list(int pid);
+    ~event_list();
     void add_event(int type_id, uint64_t config);
     void enable();
     void disable();
@@ -29,5 +30,6 @@ public:
     static void perf_event_handler(int signum, siginfo_t* info, void* ucontext);
     void sample();
     std::ostream& to_csv(std::ostream& out, std::vector<std::string> columns);
+    void delete_samples();
     void wait_event();
 };

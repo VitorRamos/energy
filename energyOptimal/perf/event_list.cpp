@@ -16,6 +16,11 @@ event_list::event_list(int pid)
 {
     this->pid= pid;
 }
+event_list::~event_list()
+{
+    for(const auto& fd : fds)
+        close(fd);
+}
 void event_list::add_event(int type_id, uint64_t config)
 {
     perf_event_attr pea;
@@ -130,6 +135,10 @@ ostream& event_list::to_csv(ostream& out, vector<string> columns)
         out << endl;
     }
     return out;
+}
+void event_list::delete_samples()
+{
+    samples.clear();
 }
 void event_list::wait_event()
 {
