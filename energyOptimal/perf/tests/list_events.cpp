@@ -66,7 +66,8 @@ public:
         raw.attr= &hw;
         memset(&att_info, 0, sizeof(att_info));
         string str_event= string(info.name);
-        if(pfm_get_os_event_encoding(str_event.c_str(), PFM_PLM0 | PFM_PLM3, PFM_OS_PERF_EVENT_EXT, &raw) == PFM_SUCCESS)
+        if(pfm_get_os_event_encoding(str_event.c_str(), PFM_PLM0 | PFM_PLM3, PFM_OS_PERF_EVENT_EXT, &raw) == PFM_SUCCESS
+        && (evs.find(make_tuple(raw.attr->type, raw.attr->config)) == evs.end()) )
         {
             if(generate_header)
             {
