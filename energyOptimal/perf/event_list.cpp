@@ -81,11 +81,11 @@ void event_list::reset()
 {
     ioctl(fds[0], PERF_EVENT_IOC_RESET, PERF_IOC_FLAG_GROUP);
 }
-void event_list::sample()
+void event_list::sample(bool reset)
 {
     void* buff= new uint8_t[4096];
     read(fds[0], buff, 4096);
-    ioctl(fds[0], PERF_EVENT_IOC_RESET, PERF_IOC_FLAG_GROUP);
+    if(reset) ioctl(fds[0], PERF_EVENT_IOC_RESET, PERF_IOC_FLAG_GROUP);
     read_format *rf= (read_format*)buff;
     vector<uint64_t> row;
     row.push_back(rf->time_running);

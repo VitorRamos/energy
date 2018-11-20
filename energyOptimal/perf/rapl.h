@@ -23,7 +23,7 @@ private:
     void detect_rapl_events();
     void create_event_set();
 public:
-    void sample();
+    void sample(bool reset=true);
     std::ostream& to_csv(std::ostream& out);
     void delete_samples();
     RAPL();

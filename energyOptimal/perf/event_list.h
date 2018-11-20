@@ -28,7 +28,7 @@ public:
     void disable();
     void reset();
     static void perf_event_handler(int signum, siginfo_t* info, void* ucontext);
-    void sample();
+    void sample(bool reset=true);
     std::ostream& to_csv(std::ostream& out, std::vector<std::string> columns);
     void delete_samples();
     void wait_event();

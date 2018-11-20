@@ -13,6 +13,7 @@ using namespace std;
 
 #include "rapl.h"
 #include "event_list.h"
+#include "superpc_events.h"
 
 
 pid_t create_wrokload(char** argv)
@@ -54,7 +55,6 @@ char** convert(const vector<string>& v)
 
 int main(int argc, char** argv)
 {
-    vector<vector<string>> args= {{"benchmarks/hello"}, {"benchmarks/hello"}};
     vector<vector<string>> args;
     ifstream files("benchmarks/polybench/files.txt");
     string names;
@@ -79,6 +79,7 @@ int main(int argc, char** argv)
         ev.add_event(PERF_TYPE_HARDWARE, PERF_COUNT_HW_CACHE_LL);
         ev.add_event(PERF_TYPE_HARDWARE, PERF_COUNT_HW_BRANCH_INSTRUCTIONS);
         ev.add_event(PERF_TYPE_HARDWARE, PERF_COUNT_HW_BRANCH_MISSES);
+        ev.add_event(DTLB_STORES_TYPE, DTLB_STORES_CONFIG);
         ev.reset();
         ev.enable();
         int status;
@@ -89,9 +90,9 @@ int main(int argc, char** argv)
             waitpid(pid, &status, WNOHANG);
             if (WIFEXITED(status))
                 break;
-            usleep(1e4);
-            ev.sample();
-            rapl.sample();
+            usleep(1e5);
+            ev.sample(false);
+            rapl.sample(false);
             // ev.wait_event();
             // ev.reset();
         }

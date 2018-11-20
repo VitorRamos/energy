@@ -92,7 +92,7 @@ void RAPL::create_event_set()
         }
     }
 }
-void RAPL::sample()
+void RAPL::sample(bool reset)
 {
     int64_t value;
     vector<double> row;
@@ -102,7 +102,7 @@ void RAPL::sample()
         for(int j=0; j<rapl_evs.size(); j++)
         {
             read(fds[i][j],&value,8);
-            ioctl(fds[i][j], PERF_EVENT_IOC_RESET, PERF_IOC_FLAG_GROUP);
+            if(reset) ioctl(fds[i][j], PERF_EVENT_IOC_RESET, PERF_IOC_FLAG_GROUP);
             row[j]+=value*rapl_evs[j].scale;
             // cout << rapl_evs[j].name << " " << value*rapl_evs[j].scale  << " " << rapl_evs[j].unit << endl;
         }
