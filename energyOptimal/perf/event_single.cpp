@@ -17,7 +17,7 @@ using namespace std;
 event_single::event_single(sampling_method method)
 {
     this->s_method= method;
-    this->ncpu= get_nprocs();
+    this->ncpu= 1;get_nprocs();
 }
 event_single::~event_single()
 {

@@ -37,7 +37,7 @@ pid_t create_wrokload(char** argv)
     return pid;
 }
 
-int total=0, nsamples=0;
+int64_t total=0, nsamples=0;
 static void perf_event_handler(int signum, siginfo_t* info, void* ucontext)
 {
     if(info->si_code != POLL_HUP) {
@@ -231,13 +231,13 @@ tuple<int64_t,int64_t> sample3(char** argv, int period)
 int main(int argc, char** argv)
 {
     string method_names[3]= {"Interruption", "Wait", "Time"};
-    vector<int64_t> total_mean[3], total_sample[3];
+    vector<double> total_mean[3], total_sample[3];
     for(int i=0; i<100; i++)
     {
         int64_t mean_1, mean_2, mean_3;
         int64_t s_1, s_2, s_3;
-        tie(mean_1, s_1)= sample1(argv, 32000);
-        tie(mean_2, s_2)= sample2(argv, 100, 10);
+        tie(mean_1, s_1)= sample1(argv, 20200000);
+        tie(mean_2, s_2)= sample2(argv, 100, 1000);
         tie(mean_3, s_3)= sample3(argv, 250);
         total_mean[0].push_back(mean_1);
         total_mean[1].push_back(mean_2);

@@ -13,6 +13,8 @@
 
 using namespace std;
 
+#define error_checking
+
 event_group::event_group(int pid, sampling_method method)
 {
     this->pid= pid;
@@ -128,11 +130,11 @@ void event_group::reset()
 }
 void event_group::sample(bool reset)
 {
-    void* buff= new uint8_t[sizeof(read_format)*fds.size()];
-    size_t bytes_read= read(fds[0], buff, sizeof(read_format)*fds.size());
+    void* buff= new uint8_t[sizeof(read_format)*100];
+    ssize_t bytes_read= read(fds[0], buff, sizeof(read_format)*100);
     #ifdef error_checking
-    if(bytes_read != sizeof(read_format)*fds.size())
-        throw "Error on sampling";
+    if(bytes_read <= 0)
+        throw "Error on sampling ";
     #endif
     if(reset) ioctl(fds[0], PERF_EVENT_IOC_RESET, PERF_IOC_FLAG_GROUP);
     read_format *rf= (read_format*)buff;
@@ -141,6 +143,7 @@ void event_group::sample(bool reset)
     for(int i=0; i<rf->nr; i++)
         row.push_back(rf->values[i].value);
     samples.push_back(row);
+    delete buff;
 }
 void event_group::delete_samples()
 {

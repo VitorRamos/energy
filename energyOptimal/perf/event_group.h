@@ -27,11 +27,11 @@ class event_group
         } values[];
     };
     std::vector<int> fds, ids;
-    std::vector<std::vector<uint64_t>> samples;
     int pid, ncpu;
     sampling_method s_method= time;
     perf_event_mmap_page* mmap_data;
 public:
+    std::vector<std::vector<uint64_t>> samples;
     static std::map<int, event_group*> event_group_fd_instance;
 public:
     event_group(int pid, sampling_method method= time);

@@ -205,7 +205,7 @@ int main(int argc, char**argv)
 
         vector<PAPI_event_info_t> preset_event= p.query_events(PAPI_PRESET_MASK);
         vector<int> EventSets_preset= p.create_eventsets_from_types(preset_event);
-
+        
         int cont=0;
         for(auto ev: EventSets_preset)
         {
@@ -223,7 +223,7 @@ int main(int argc, char**argv)
             waitpid(pid, &status, 0);
             PAPI_start(ev);
             ptrace(PTRACE_CONT, pid, 0, 0);
-            usleep(1e5);
+            usleep(1e3);
             PAPI_read(ev, couters.data());
             // PAPI_reset(ev);
             samples.push_back(couters);
@@ -234,7 +234,7 @@ int main(int argc, char**argv)
                 waitpid(pid, &status, WNOHANG);
                 if (WIFEXITED(status))
                     break;
-                usleep(1e5);
+                usleep(1e3);
                 PAPI_read(ev, couters.data());
                 // PAPI_reset(ev);
                 samples.push_back(couters);

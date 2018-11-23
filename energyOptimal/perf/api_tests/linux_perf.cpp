@@ -121,7 +121,7 @@ int main(int argc, char **argv)
         ioctl(fds[0], PERF_EVENT_IOC_ID, &ids[0]);
         aux[ids[0]] = pmcs[0];
 
-        for (int i = 1; i < 3; i++)
+        for (int i = 1; i < 4; i++)
         {
             memset(&pea, 0, sizeof(struct perf_event_attr));
             pea.type = PERF_TYPE_HARDWARE;
