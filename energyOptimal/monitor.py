@@ -9,14 +9,12 @@ import time
 import os
 
 class monitorProcess:
-    def __init__(self, program_name_, sensor_type_='ipmi'):
-        self.sensor_type = sensor_type_
-        if self.sensor_type == "rapl":
-            self.sensor = RAPL("service3")
-        elif self.sensor_type == "ipmi":
-            self.sensor = IPMI(server= "http://localhost:8080", name_="admin", password_="admin")
-        else:
-            raise(Exception("Invalid sensor type"))
+    def __init__(self, program_name_, sensor= None):
+        
+        # IPMI(server= "http://localhost:8080", name_="admin", password_="admin")
+        # RAPL(name= "service3",method="scontrol")
+        if sensor == None:
+            self.sensor= RAPL(name_="rapl", method="PERF")
 
         self.cpu = cpuFreq()
         self.models = []
@@ -24,9 +22,14 @@ class monitorProcess:
         self.program_name = os.path.basename(program_name_)
         self.program_path = os.path.dirname(program_name_)
 
-    def run(self, list_threads, list_args, idle_time, save_name, verbose=0):
+    def run(self, list_args, idle_time, save_name, list_threads= None, list_frequencies= None, verbose=0):
         '''
-        TODO list of frequencies
+            list_threads: list of threads to run the profiler
+            list_frequencies: list of frequencies avialable to run the profiler
+            list_args: program arguments
+            idle_time: idle time between runs
+            save_name: output file
+            verbose: level of verbose
         '''
         current_dir= os.getcwd()
         os.chdir(self.program_path)
@@ -36,7 +39,12 @@ class monitorProcess:
             self.cpu.set_governors("userspace")
             freq = self.cpu.get_available_frequencies()
             cpus = self.cpu.get_online_cpus()
+            if list_threads == None:
+                list_threads= cpus
+            if list_frequencies == None:
+                list_frequencies= freq
 
+            freq= sorted(set(list_frequencies)&set(freq))
             for f in freq:
                 info_threads = []
                 for thr in list_threads:
@@ -72,15 +80,12 @@ class monitorProcess:
                                 self.sensor.print_pot()
 
                             tg = time.time()-tg
-    #						if 1-tg >= 0:
-    #							time.sleep(1-tg)
                         program.wait()
                         tt = time.time()-ti
                         if verbose > 0:
                             print("Tempo total", tt)
 
-                        l1 = {"arg": list(arg), "total_time": tt,
-                            self.sensor_type: info_sensor}
+                        l1 = {"arg": list(arg), "total_time": tt, self.sensor.name: info_sensor}
                         info_pcpu.append(l1.copy())
 
                         time.sleep(idle_time)
@@ -103,7 +108,7 @@ class monitorProcess:
 
     def run_dvfs(self, list_threads, list_args, idle_time, save_name, verbose= 0):
         '''
-        TODO list of frequencies
+
         '''
         current_dir= os.getcwd()
         os.chdir(self.program_path)
@@ -123,6 +128,7 @@ class monitorProcess:
                 self.cpu.disable_cpu(cpus[thr:])
                 if verbose > 0:
                     print(cpus[thr:], self.cpu.get_online_cpus())
+
                 #TODO assert len(online_cpus==thr) and freq == f
 
                 info_pcpu = []
@@ -155,7 +161,7 @@ class monitorProcess:
                     if verbose > 0:
                         print("Tempo total", tt)
 
-                    l1 = {"arg": list(arg), "total_time": tt, self.sensor_type: info_sensor}
+                    l1 = {"arg": list(arg), "total_time": tt, self.sensor.name: info_sensor}
                     info_pcpu.append(l1.copy())
                     time.sleep(idle_time)
 
