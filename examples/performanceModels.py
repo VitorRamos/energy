@@ -1,6 +1,7 @@
 from energyOptimal.performanceModel import performanceModel
 from energyOptimal import plotData
 
+import _pickle as pickle
 import numpy as np
 import argparse
 
@@ -17,7 +18,7 @@ import argparse
 #                       23, 1, 0]
 
 parser= argparse.ArgumentParser(description='Create and visualize performance model from monitor data')
-parser.add_argument('--create',type=str,help='Create performance model',nargs=4,metavar=('data','arg_num','dataframe','svr'))
+parser.add_argument('--create',type=str,help='Create performance model',nargs=4,metavar=('data','arg_num','save_name'))
 parser.add_argument('--show',type=str,help='Show performance model',nargs=2,metavar=('dataframe','svr'))
 parser.add_argument('--title',type=str,help='Title on figure',nargs=1)
 parser.add_argument('--freqs',type=str,help='Frequency range', default='1.2,2.3,0.1',nargs='?')
@@ -43,7 +44,7 @@ def get_range(str_range):
             _range+= list([float(sr[0])])
     return _range
 
-def createPerformanceModel(path, idx, save_df, save_svr):
+def createPerformanceModel(path, idx, name):
     perf_model= performanceModel()
     perf_model.loadData(filename=path, arg_num=int(idx), verbose=0, method='constTime',
                             freqs_filter=get_range(args.freqs), thrs_filter= get_range(args.thrs))
@@ -56,11 +57,10 @@ def createPerformanceModel(path, idx, save_df, save_svr):
     print("MAE ", perf_model.error(method='mae'))
     scores= perf_model.crossValidate(method='mpe')
     print("CrossValidation ", np.mean(scores)*100, scores)
-    perf_model.saveDataframe(save_df)
-    perf_model.saveSVR(save_svr)
+    pickle.dump(perf_model, open(name,"wb"))
 
-def visualizePeformanceModel(path_df, path_svr, title_):
-    perf_model= performanceModel(path_df, path_svr)
+def visualizePeformanceModel(name, title_):
+    perf_model= pickle.load(open(name,"rb"))
     df= perf_model.dataFrame.sort_values(['freq', 'thr'])
     
     freqs= get_range(args.freqs) if args.freqs else df['freq'].unique()

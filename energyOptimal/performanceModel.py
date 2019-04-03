@@ -1,4 +1,4 @@
-import pickle
+import _pickle as pickle
 import numpy as np
 import pandas as pd
 from sklearn.svm import SVR
@@ -6,131 +6,13 @@ from sklearn.model_selection import train_test_split
 from sklearn.model_selection import cross_validate, cross_val_score
 
 class performanceModel:
-    def __init__(self, dataFramefile= '', svrfile=''):
+    def __init__(self):
         '''
-            dataFramefile and svrfile: load fited model
+           Creata a performance model 
         '''
-        self.frequencies = []
-        self.threads = []
-        self.powers = []
         self.dataFrame= None
         self.svr= None
-        if dataFramefile and svrfile:
-            self.loadDataFrame(dataFramefile)
-            self.loadSVR(svrfile)
-
-
-    def loadData_(self, filename, arg_num, verbose=0, method= 'constTime', createDataFrame= True,
-                 freqs_filter=[], thrs_filter=[]):
-        '''
-        deprecated
-        filename: string
-        arg_num: argument that contains the problem size
-        verbose: number, level of verbose mode
-        method: string
-            constTime : Average the power samples to estimate energy,
-                        this assume the interval between samples are constant
-            timeDiff : Uses time interval to estimate energy and accumulates
-            allSamples : Keep all samples on the power array, energy it's not estimated
-        createDataFrame: boolean
-        freqs_filter: list, list of frequencies to load in Hz
-        thrs_filter: list, list of threads to load
-        return dataFrame if createDataFrame is True otherwise frequencies, threads, powers
-        '''
-
-        with open(filename,'rb+') as f:
-            data= pickle.load(f)
-        
-        has_ipmi= 'ipmi' in data[0]['threads'][0]['lpcpu'][0].keys()
-        has_rapl= 'rapl' in data[0]['threads'][0]['lpcpu'][0].keys()
-        
-        for thr in data[0]['threads']:
-            if len(thrs_filter) > 0 and thr['nthreads'] not in thrs_filter: continue
-            self.threads.append(thr['nthread'])
-
-        df = []
-        for d in data:
-            assert len(d['threads']) == len(self.threads)
-            freq = int(d['freq'])
-            if len(freqs_filter) > 0 and freq not in freqs_filter: continue
-            freq= freq/1e6
-            self.frequencies.append(freq)
-            for thr in d['threads']:
-                if len(thrs_filter) > 0 and thr['nthreads'] not in thrs_filter: continue
-                for p in thr['lpcpu']:
-                    pw = []
-                    if has_rapl:
-                        if method == 'timeDiff':
-                            pw= 0
-                            for i in range(len(p['rapl'])):
-                                pot = p['rapl'][i]['sensor']
-                                if i - 1 >= 0:
-                                    pw += (p['rapl'][i]['time']-p['rapl'][i - 1]['time'])*pot
-                                if i == len(p['rapl']) - 1:
-                                    pw += pot * (p['total_time']-p['rapl'][i]['time'])
-                        else:
-                            for s in p['rapl']:
-                                if float(s['sensor']) > 0:
-                                    if createDataFrame and method == 'allSamples':
-                                        row = [d['freq'], thr['nthread'], p['arg'][arg_num], s['time'], float(s['sensor'])]
-                                        df.append(row)
-                                    pw.append(float(s['sensor']))
-                            if method == 'constTime':
-                                pw= np.mean(pw)
-                            elif method == 'allSamples':
-                                if createDataFrame:
-                                    pw= np.mean(pw)
-
-                    elif has_ipmi:
-                        if method == 'timeDiff':
-                            pw= 0
-                            for i in range(len(p['ipmi'])):
-                                pot = p['ipmi'][i]['sensor']['sources'][0]['dcOutPower']
-                                pot += p['ipmi'][i]['sensor']['sources'][1]['dcOutPower']
-                                if i - 1 >= 0:
-                                    pw += (p['ipmi'][i]['time']-p['ipmi'][i - 1]['time'])*pot
-                                if i == len(p['ipmi']) - 1:
-                                    pw += pot * (p['total_time']-p['ipmi'][i]['time'])
-
-                        else:    
-                            for s in p['ipmi']:
-                                pot = float(s['sensor']['sources'][0]['dcOutPower']+
-                                            s['sensor']['sources'][1]['dcOutPower'])
-                                if createDataFrame and method == 'allSamples':
-                                    row = [d['freq'], thr['nthread'], p['arg'][arg_num], s['time'], pot]
-                                    df.append(row)
-                                pw.append(pot)
-
-                            if method == 'constTime':
-                                pw= np.mean(pw)
-                            elif method == 'allSamples':
-                                if createDataFrame:
-                                    pw= np.mean(pw)
-                    
-                    if createDataFrame:
-                        row = [d['freq'], thr['nthread'], p['arg'][arg_num], p['total_time'], pw]
-                        df.append(row)
-
-                    self.powers.append(pw)
-
-                    if verbose > 0:
-                        if type(pw) == list:
-                            pw= np.mean(pw)
-                        print(d['freq'], thr['nthread'], p['arg'][arg_num], 
-                        'T', p['total_time'], 'P', pw, 'E', p['total_time']*pw)
-
-        if createDataFrame:
-            if method == 'timeDiff':
-                self.dataFrame = pd.DataFrame(df, columns=['freq', 'thr', 'in', 'time', 'energy'])
-            else:
-                self.dataFrame = pd.DataFrame(df, columns=['freq', 'thr', 'in', 'time', 'pw'])
-                self.dataFrame['energy']= self.dataFrame['time']*self.dataFrame['pw']
-            cat = pd.factorize(self.dataFrame['in'])
-            self.dataFrame['in_cat'] = cat[0] + 1
-            self.dataFrame['freq'] = self.dataFrame['freq'].astype(float)/1e6
-            return self.dataFrame
-        
-        return self.frequencies, self.threads, self.powers
+        self.header= None
 
     def loadData(self, filename, arg_num, verbose=0, method= 'constTime',
                         freqs_filter=[], thrs_filter=[]):
@@ -152,12 +34,13 @@ class performanceModel:
         with open(filename,'rb+') as f:
             data= pickle.load(f)
 
+        if "header" in data[0].keys():
+            self.header= data[0]["header"]
+            if verbose > 1:
+                print(self.header)
+
         has_ipmi= 'ipmi' in data[0]['threads'][0]['lpcpu'][0].keys()
         has_rapl= 'rapl' in data[0]['threads'][0]['lpcpu'][0].keys()
-
-        for thr in data[0]['threads']:
-            if len(thrs_filter) > 0 and thr['nthread'] not in thrs_filter: continue
-            self.threads.append(thr['nthread'])
 
         df = []
         isClose= lambda x,y: abs(x-y)<0.01
@@ -218,21 +101,7 @@ class performanceModel:
             df['energy'] = self.dataFrame.groupby(['freq','thr','in_cat']).energy.sum().values
             self.dataFrame = df.drop(columns='time_diff')
         
-        self.threads= self.dataFrame['thr'].unique()
-        self.frequencies= self.dataFrame['freq'].unique()
-        self.power= self.dataFrame['pw'].values
-        
         self.dataFrame = pd.merge(self.dataFrame,df_cat)
-        return self.dataFrame
-
-    def saveDataframe(self, filename):
-        assert self.dataFrame is not None
-        with open(filename, 'wb+') as f:
-            pickle.dump(self.dataFrame, f, pickle.HIGHEST_PROTOCOL)
-
-    def loadDataFrame(self, filename):
-        with open(filename, 'rb+') as f:
-            self.dataFrame= pickle.load(f)
         return self.dataFrame
 
     def fit(self, C_=10e3, gamma_=0.1, train_size_= 0.9, dataframe=False):
@@ -250,7 +119,7 @@ class performanceModel:
 
         X = self.dataFrame[['freq', 'thr', 'in_cat']].values
         Y = self.dataFrame['time'].astype(float).values
-        Xtrain, Xtest, Ytrain, Ytest = train_test_split(X, Y, train_size=train_size_, random_state=0)
+        Xtrain, _, Ytrain, _ = train_test_split(X, Y, train_size=train_size_, random_state=0)
         self.svr.fit(Xtrain, Ytrain)
 
         if dataframe:
@@ -258,16 +127,6 @@ class performanceModel:
             Xtrain['time']= Ytrain
             return Xtrain
             
-        return self.svr
-
-    def saveSVR(self, filename):
-        assert self.svr is not None
-        with open(filename, 'wb+') as f:
-            pickle.dump(self.svr, f, pickle.HIGHEST_PROTOCOL)
-
-    def loadSVR(self, filename):
-        with open(filename, 'rb+') as f:
-            self.svr= pickle.load(f)
         return self.svr
 
     def mpe(self,clf, X, y):
