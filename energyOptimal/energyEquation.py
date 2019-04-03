@@ -53,7 +53,9 @@ class Equation:
     
 
 class equationModel:
-    def __init__(self):
-        
+    def __init__(self, perf_model):
         self.model= Equation()
-    
+        self.perf_model= perf_model
+        self.model.fit(self.perf_model.dataFrame[["in_cat","freq","thr"]].values, self.perf_model.dataFrame["energy"].values)
+        self.dataframe= self.perf_model.dataFrame
+        self.dataframe["energy_equation"]= self.model.predict(self.perf_model.dataFrame[["in_cat","freq","thr"]].values)
