@@ -40,7 +40,10 @@ class powerModel:
     def __getVectorRAPL(self, rapl):
         ret = []
         for t in rapl:
-            ret.append(float(t['sensor']))
+            if type(t) == type(dict):
+                ret.append(float(t['sensor']))
+            else:
+                ret.append(float(t))
         ret = np.sort(ret) # median
         return ret[20:-20]
 
