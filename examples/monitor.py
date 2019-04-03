@@ -1,5 +1,7 @@
 from energyOptimal.monitor import monitorProcess
-from energyOptimal.cpufreq import cpuFreq
+from energyOptimal.monitor import cpuFreq
+from energyOptimal.sensors.ipmi import IPMI
+from energyOptimal.sensors.rapl import RAPL
 
 args_black=\
 [\
@@ -51,11 +53,11 @@ args_freq=\
 ]
 args_rtview=\
 [\
-["thai_statue.obj","-automove","-nthreads","__nt__","-frames","10000","-res","100","100"],\
-["thai_statue.obj","-automove","-nthreads","__nt__","-frames","10000","-res","200","200"],\
-["thai_statue.obj","-automove","-nthreads","__nt__","-frames","10000","-res","300","300"],\
+["thai_statue.obj","-automove","-nthreads","__nt__","-frames","10000","-res","346","346"],\
+["thai_statue.obj","-automove","-nthreads","__nt__","-frames","10000","-res","374","374"],\
 ["thai_statue.obj","-automove","-nthreads","__nt__","-frames","10000","-res","400","400"],\
-["thai_statue.obj","-automove","-nthreads","__nt__","-frames","10000","-res","500","500"]
+["thai_statue.obj","-automove","-nthreads","__nt__","-frames","10000","-res","424","424"],\
+["thai_statue.obj","-automove","-nthreads","__nt__","-frames","10000","-res","450","450"]
 ]
 args_swap=\
 [\
@@ -93,28 +95,31 @@ args_openmc= [['input1'],\
     ['input4'],\
     ['input5']\
 ]
-
-args_body=[['sequenceB_1043', '4', '64', '1000', '10', '0', '__nt__'],\
-['sequenceB_1043', '4', '128', '1000', '10', '0', '__nt__'],\
-['sequenceB_1043', '4', '256', '1000', '10', '0', '__nt__'],\
-['sequenceB_1043', '4', '512', '1000', '10', '0', '__nt__'],\
-['sequenceB_1043', '4', '1024', '1000', '10', '0', '__nt__']\
+args_body=[['sequenceB_1043', '4', '204', '1000', '10', '0', '__nt__'],\
+['sequenceB_1043', '4', '408', '1000', '10', '0', '__nt__'],\
+['sequenceB_1043', '4', '612', '1000', '10', '0', '__nt__'],\
+['sequenceB_1043', '4', '816', '1000', '10', '0', '__nt__'],\
+['sequenceB_1043', '4', '1020', '1000', '10', '0', '__nt__']\
 ]
 
 try:
-    programs= [monitorProcess(program_name_= 'apps/openmc_/openmc', sensor_type_='ipmi'),
-               monitorProcess(program_name_= 'apps/xhpl_/xhpl', sensor_type_='ipmi'),
-               monitorProcess(program_name_= 'apps/canneal_/canneal', sensor_type_='ipmi'),
-               monitorProcess(program_name_= 'apps/dedup_/dedup', sensor_type_='ipmi'),
-               monitorProcess(program_name_= 'apps/ferret_/ferret', sensor_type_='ipmi'),
-               monitorProcess(program_name_= 'apps/x264_/x264', sensor_type_='ipmi'),
-               monitorProcess(program_name_= 'apps/vips_/vips', sensor_type_='ipmi'),
-               monitorProcess(program_name_= 'apps/blackscholes_/blackscholes', sensor_type_='ipmi'),
-               monitorProcess(program_name_= 'apps/fluidanimate_/fluidanimate', sensor_type_='ipmi'),
-               monitorProcess(program_name_= 'apps/swaptions_/swaptions', sensor_type_='ipmi'),
-               monitorProcess(program_name_= 'apps/rtview_/rtview', sensor_type_='ipmi'),
-               monitorProcess(program_name_= 'apps/bodytrack_/bodytrack', sensor_type_='ipmi'),
-               monitorProcess(program_name_= 'apps/freqmine_/freqmine', sensor_type_='ipmi')]
+    cpu= cpuFreq()
+    sensor= IPMI(server= "http://localhost:8080", name_="admin", password_="admin")
+
+    programs= [monitorProcess(program_name_= 'apps/openmc_/openmc',             sensor= sensor),
+               monitorProcess(program_name_= 'apps/xhpl_/xhpl',                 sensor= sensor),
+               monitorProcess(program_name_= 'apps/canneal_/canneal',           sensor= sensor),
+               monitorProcess(program_name_= 'apps/dedup_/dedup',               sensor= sensor),
+               monitorProcess(program_name_= 'apps/ferret_/ferret',             sensor= sensor),
+               monitorProcess(program_name_= 'apps/x264_/x264',                 sensor= sensor),
+               monitorProcess(program_name_= 'apps/vips_/vips',                 sensor= sensor),
+               monitorProcess(program_name_= 'apps/blackscholes_/blackscholes', sensor= sensor),
+               monitorProcess(program_name_= 'apps/fluidanimate_/fluidanimate', sensor= sensor),
+               monitorProcess(program_name_= 'apps/swaptions_/swaptions',       sensor= sensor),
+               monitorProcess(program_name_= 'apps/rtview_/rtview',             sensor= sensor),
+               monitorProcess(program_name_= 'apps/bodytrack_/bodytrack',       sensor= sensor),
+               monitorProcess(program_name_= 'apps/freqmine_/freqmine',         sensor= sensor)
+    ]
 
     args= [args_openmc, args_xhpl, args_canneal, args_dedup,
             args_ferret, args_x264, args_vips, args_black, args_fluid, args_swap, args_rtview, args_body, args_freq]
@@ -127,12 +132,10 @@ try:
                 thr= [1,2,4,8,16,32]
             else:
                 thr= [1]+list(range(2,33,2))
-            p.run_dvfs(list_threads= thr, list_args= a, idle_time= 30,
-            verbose=2, save_name='data/dvfs/{}_completo_5.pkl'.format(p.program_name))
+            frs= cpu.get_available_frequencies()[::2]
+            p.run_dvfs(list_threads= thr, list_frequencies=frs, list_args= a, idle_time= 30,
+                        verbose=2, save_name='data/dvfs/{}_completo_5.pkl'.format(p.program_name))
         except Exception as e:
             print(e)
-except KeyboardInterrupt:
-    cpu= cpuFreq()
+except:
     cpu.reset()
-    
-
