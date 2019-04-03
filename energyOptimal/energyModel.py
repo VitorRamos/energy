@@ -31,13 +31,15 @@ class energyModel:
         self.__createDataframe()
 
     def __createDataframe(self):
+        '''
+            Return dataframe with estimated energy
+        '''
         self.dataFrame= pd.DataFrame(np.array(np.meshgrid(self.freq_range,
                                         self.thr_range,self.inputs_range)).T.reshape(-1,3),
                                         columns=['freq', 'thr', 'in_cat'])
-        self.dataFrame['time']= self.performace_model.estimate(self.dataFrame[['freq','thr','in_cat']])
-        self.dataFrame['pw']= np.tile(self.power_model.estimate(self.freq_range,self.thr_range), 
-                                                        len(self.inputs_range))
-        self.dataFrame['energy_model']= self.dataFrame['time']*self.dataFrame['pw']
+        self.dataFrame['time_model']= self.performace_model.estimate(self.dataFrame[['freq','thr','in_cat']])
+        self.dataFrame['pw_model']= np.tile(self.power_model.estimate(self.freq_range,self.thr_range), len(self.inputs_range))
+        self.dataFrame['energy_model']= self.dataFrame['time_model']*self.dataFrame['pw_model']
         return self.dataFrame
     
     def minimalEnergy(self):
