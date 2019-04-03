@@ -7,12 +7,12 @@ class RAPL:
 	RAPL_ENERGY_DIR= '/sys/class/powercap/intel-rapl/intel-rapl:0/energy_uj'
 	PKG_ENERGY_SCALE= 2.3283064365386962890625e-10
 		
-	def __init__(self, name_, method=None):
+	def __init__(self, name_=None, method=None):
 
 		if method == None:
 			if os.stat(RAPL.RAPL_ENERGY_DIR):
 				self.method= 'RAPL'
-			elif which('scontrol'):
+			elif which('scontrol') and name_ is not None:
 				self.method= 'SCONTROL'
 			else:
 				self.method= 'PERF'
