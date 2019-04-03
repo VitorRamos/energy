@@ -2,12 +2,8 @@ import pickle
 import pandas as pd
 import numpy as np
 
-
 class dvfsModel:
     def __init__(self):
-        self.frequencies = []
-        self.threads = []
-        self.powers = []
         self.dataFrame = None
 
     def loadData(self, filename, arg_num, verbose=0, method='allSamples'):
@@ -47,9 +43,11 @@ class dvfsModel:
                     pw = np.asarray(pw)
                     df.append([thr['nthread'], lpcpu['arg'][arg_num],
                               lpcpu['total_time'], pw.mean()] + row)
-
+                if has_rapl:
+                    pass
+                    
         self.dataFrame = pd.DataFrame(df,
-                    columns=['thr', 'in', 'time', 'pw'] + ['cpu%i' % x for x in range(0, 32)])
+                                     columns=['thr', 'in', 'time', 'pw'] + ['cpu%i' % x for x in range(0, 32)])
 
         if method == 'constTime':
             self.dataFrame = self.dataFrame.sort_values(['thr', 'in', 'time'])
