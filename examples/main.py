@@ -17,7 +17,7 @@ def createPerformanceModels(appname=None):
             continue
         perf_model= performanceModel()
         df= perf_model.loadData(filename='data/performance_model/'+p, arg_num=idx, verbose=0,
-                                method='constTime', freqs_filter=list(range(1200000,2300000,100000)))
+                                method='constTime')
 
         if 'fluid' in p:
             perf_model.dataFrame= perf_model.dataFrame[perf_model.dataFrame['thr'].isin([1,2,4,8,16,32])]
@@ -103,9 +103,9 @@ def createReducedPerformanceModel(path, arg_num, title_='', save_df='', save_svr
         # print( x[-1], y_time[-1] )
         if y_time[-1] <= 6 and less_5 == 0:
             less_5= y_time[-1]
-            print('%s_%i.pkl'%(title,train_sz))
-            perf_model.saveDataframe('data/dataframes/%s_%i.pkl'%(title,train_sz))
-            perf_model.saveSVR('data/svr/%s_%i.pkl'%(title,train_sz))
+            print('%s_%i.pkl'%(title_,train_sz))
+            perf_model.saveDataframe('data/dataframes/%s_%i.pkl'%(title_,train_sz))
+            perf_model.saveSVR('data/svr/%s_%i.pkl'%(title_,train_sz))
             break
         # scores= perf_model.crossValidate(method='mpe')
         # print("CrossValidation ", np.mean(scores)*100, scores)
@@ -121,7 +121,7 @@ def createReducedPerformanceModel(path, arg_num, title_='', save_df='', save_svr
 
     plt.xlabel('Train size')
     plt.title(title_)
-    plt.savefig('fotos/over/%s.png'%title)
+    plt.savefig('fotos/over/%s.png'%title_)
     # plt.show()
 
 
@@ -191,7 +191,7 @@ def createReducedPerformanceModel2(path, arg_num, title_='', save_df='', save_sv
         y_en.append(aux['energy'].sum()/1e6)
         # scores= perf_model.crossValidate(method='mpe')
 
-        print('%s_%i.pkl'%(title,f), aux.shape, aux['energy'].sum()/1e6, error, perf_model.error()*100)
+        print('%s_%i.pkl'%(title_,f), aux.shape, aux['energy'].sum()/1e6, error, perf_model.error()*100)
         print(use_freq)
 
         perf_model.saveDataframe('data/dataframes/%s_%i.pkl'%(title_,f))
@@ -208,7 +208,7 @@ def createReducedPerformanceModel2(path, arg_num, title_='', save_df='', save_sv
 
     plt.xlabel('Train size')
     plt.title(title_)
-    plt.savefig('fotos/over/%s.png'%title)
+    plt.savefig('fotos/over/%s.png'%title_)
     # plt.show()
 
 def comparation(appname=None, proposed_bar=False, relative=True, thrs_filter= []):
@@ -280,7 +280,7 @@ def comparation(appname=None, proposed_bar=False, relative=True, thrs_filter= []
         df['min_run']= df['train_energy']/df['min_save']
 
         df= df.sort_values('32_en',ascending=False)
-        df= pd.concat( (df,pd.DataFrame([['mean']+list(df[df>0].mean().values)],columns=df.columns)) )
+        df= pd.concat( (df,pd.DataFrame([['mean']+list(df.mean().values)],columns=df.columns)) )
         df.to_csv('tables/relative.csv')
         print(df)
 
@@ -302,12 +302,13 @@ parsecapps=['completo_black_5.pkl','completo_canneal_2.pkl','completo_dedup_3.pk
             'completo_ferret_3.pkl','completo_fluid_3.pkl','completo_freqmine_1.pkl',
             'completo_rtview_3.pkl','completo_swaptions_2.pkl','completo_vips_3.pkl',
             'completo_x264_3.pkl','completo_xhpl.pkl','completo_openmc_kernel_novo.pkl',
-            'completo_bodytrack.pkl']
+            'completo_bodytrack_1.pkl']
 parsec_models=['Blackscholes_2.pkl', 'Canneal_2.pkl', 'Dedup_2.pkl',
                 'Ferret_2.pkl', 'Fluidanimate_2.pkl', 'Freqmine_2.pkl',
                 'Raytrace_2.pkl', 'Swaptions_2.pkl', 'Vips_2.pkl',
                 'x264_2.pkl', 'HPL_2.pkl', 'Openmc_3.pkl',
                 'Bodytrack_2.pkl']
+# parsec_models= parsecapps
 parsec_dvfs=['blackscholes_completo_3.pkl', 'canneal_completo_3.pkl', 'dedup_completo_3.pkl',
              'ferret_completo_3.pkl', 'fluidanimate_completo_3.pkl', 'freqmine_completo_5.pkl',
              'rtview_completo_3.pkl', 'swaptions_completo_3.pkl', 'vips_completo_3.pkl',
@@ -319,10 +320,10 @@ parsecapps_argnum= [1, 4, 6,
                     23, 1, 0,
                     2]
 # energy_figures(parsecapps[0])
-# createPerformanceModels(parsecapps[0])
-comparation(appname='dedup',proposed_bar=False,relative=True,thrs_filter=[])
+# createPerformanceModels(parsecapps[-1])
+# comparation(appname='dedup',proposed_bar=False,relative=True,thrs_filter=[])
 # figures(energy=False, in_cmp=3)
-
+comparation(appname="", proposed_bar=False,relative=True)
 # for app,arg,title in zip(parsecapps,parsecapps_argnum,titles):
 #     if not 'freq' in app:
 #         continue
