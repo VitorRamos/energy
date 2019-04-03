@@ -1,6 +1,7 @@
 from energyOptimal import plotData
 from energyOptimal.powerModel import powerModel
 
+import _pickle as pickle 
 import argparse
 import numpy as np
 
@@ -30,20 +31,24 @@ def get_range(str_range):
     return _range
 
 def createPowerModel(path, save_model):
-    pw_model= powerModel(power_model_= lambda x,f,p: x[0]*f**3+x[1]*f+x[2], power_mode_n_=3)
+    pw_model= powerModel()
+    # pw_model.power_model_= lambda x,f,p: x[0]*f**3+x[1]*f+x[2]
+    # pw_model.power_mode_n_=3
     pw_model.loadData(filename=path, verbose=2, load_sensors=False, freqs_filter= get_range(args.freqs), 
                                                                     thrs_filter= get_range(args.thrs))
     pw_model.fit()
-    pw_model.save(save_model)
+    pickle.dump(pw_model, open(save_model,"wb"))
     error= pw_model.error()
-    print("Power model constants, ", pw_model.power_model_x)
+    print("Power model constants, ", pw_model.power_model_c)
     print("Erro, ", error)
 
     return pw_model
 
 def visualizePowerModel(path):
     # Plot the measured values and the model
-    pw_model = powerModel(path, power_model_= lambda x,f,p: x[0]*f**3+x[1]*f+x[2], power_mode_n_=3)
+    pw_model = pickle.load(open(path,"rb"))
+    # pw_model.power_model_= lambda x,f,p: x[0]*f**3+x[1]*f+x[2]
+
     freqs= get_range(args.freqs) if args.freqs else pw_model.frequencies
     thrs= get_range(args.thrs) if args.thrs else pw_model.threads
     est= pw_model.estimate(freqs, thrs)

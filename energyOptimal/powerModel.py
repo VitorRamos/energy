@@ -4,7 +4,7 @@ from scipy.optimize import least_squares
 import pandas as pd
 
 class powerModel:
-    def __init__(self, filename= '', power_model_=None, power_mode_n_=4):
+    def __init__(self, power_model_=None, power_mode_n_=4):
         '''
             filename: load fited model
         '''
@@ -16,10 +16,8 @@ class powerModel:
             self.power_model= power_model_
         else:
             self.power_model= lambda x,f,p: x[0]*f**3*p+x[1]*f*p+x[2]+x[3]*(np.floor(p/17)+1)
-        self.power_model_x= []
+        self.power_model_c= []
         self.power_mode_n= power_mode_n_
-        if filename:
-            self.load(filename)
 
     def __getVectorIPMI(self, ipmi, name):
         ret1 = []
@@ -165,34 +163,14 @@ class powerModel:
         f= np.repeat(self.frequencies,len(self.threads))
         p= np.tile(self.threads,len(self.frequencies))
         res_robust= least_squares(err, x0, loss='soft_l1', f_scale=1, args=(f, p, self.powers))
-        self.power_model_x= res_robust.x
+        self.power_model_c= res_robust.x
         if verbose > 0:
             res_robust
-        return self.power_model_x
+        return self.power_model_c
     
-    def save(self,filename):
-        '''
-            Save power model constants
-        '''
-        assert self.power_model_x is not None
-        with open(filename, 'wb+') as f:
-            pickle.dump({'power_model_x':self.power_model_x,
-                        'frequencies':self.frequencies,
-                        'threads':self.threads,
-                        'powers':self.powers}, f, pickle.HIGHEST_PROTOCOL)
-
-    def load(self,filename):
-        '''
-            Load power model constants
-        '''
-        with open(filename, 'rb+') as f:
-            data= pickle.load(f)
-            self.power_model_x= data['power_model_x']
-            self.frequencies= data['frequencies']
-            self.threads= data['threads']
-            self.powers= data['powers']
-            
-        return self.power_model_x
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        state["power_model"]= None
     
     def estimate(self, f, p, dataFrame=False):
         '''
@@ -204,11 +182,11 @@ class powerModel:
 
         return list of estimatives
         '''
-        assert len(self.power_model_x)>0
+        assert len(self.power_model_c)>0
         f_len= len(f)
         f= np.repeat(f,len(p))
         p= np.tile(p,f_len)
-        pws= self.power_model(self.power_model_x,f,p)
+        pws= self.power_model(self.power_model_c,f,p)
         if dataFrame:
             df= pd.DataFrame(np.vstack((f,p,pws)).T, columns=['freq','thr','pw_est'])
             return df
@@ -220,7 +198,7 @@ class powerModel:
 
         return error value
         '''
-        assert len(self.power_model_x)>0
+        assert len(self.power_model_c)>0
         estimative= np.array(self.estimate(self.frequencies, self.threads))
         real= np.array(self.powers)
         if absolute:
