@@ -1,5 +1,5 @@
 from energyOptimal.performanceModel import performanceModel
-from scipy.optimize import least_squares
+from scipy.optimize import least_squares, nnls
 import _pickle as pickle
 import numpy as np
 from mpl_toolkits.mplot3d import Axes3D
@@ -24,13 +24,13 @@ for p,title in zip(parsecapps,titles):
     fig = plt.figure()
     ax = fig.gca(projection='3d')
 
-    f= open("data/dataframes/"+p,"rb")
     var= "energy"
+    f= open("data/dataframes/"+p,"rb")
     data= pickle.load(f)
     data= data[data["in_cat"]==5]
     data= data[["freq","thr","time","energy"]]
     data= data[data["thr"]<=16]
-    data[var]/=1e3
+    data[var]= data[var]/data[var].max()
 
     data= data[data["thr"].isin([1,2,4,8,16])]
     data= data[data["freq"].isin([1.3, 1.5, 1.7, 1.9, 2.1])]
@@ -62,12 +62,23 @@ for p,title in zip(parsecapps,titles):
         t= lambda f,p: xs[0]*( xs[1]/p-xs[1]+1 )/f
     # var="energy"
     # t= lambda f,p: xs[0]*( xs[1]/p-xs[1]+1 )/f*((0.29*f**3+0.97*f)*p+198)
-        
+
+    # LIENAR LEATS SQUARES
+    f= train_data["freq"]
+    p_= train_data["thr"]
+    A= np.hstack( (f**2*p_, 1/(f*p_), f**2, p_, 1/f, np.ones(f.shape)) ).reshape((-1,6),order='F')
+    b= train_data["energy"]
+    # reslin= [[0.01421882712431667, 653.072187564777, 0.9565198706756833, 0.04755952520892127, 9.708026795223106, 3.199394050191078]]
+    # reslin= [np.dot(np.dot(np.linalg.inv(np.dot(A.T,A)),A.T),b)]
+    reslin= np.linalg.lstsq(A,b,rcond=None)
+    tlin= lambda x,f,p: x[0]*f**2*p+x[1]/(f*p)+x[2]*f**2+x[3]*p+x[4]/f+x[5]
+    
     data= data.sort_values(["freq","thr"])
     x1= np.arange(1.2,fmax,0.1)
     x2= np.arange(1,tmax+1,1)
     X,Y= np.meshgrid(x1,x2)
     Z1= t(X,Y)
+    Z1= tlin(reslin[0],X,Y)
     ax.plot_wireframe(X, Y, Z1, antialiased=True, color="r", label="Equation")
 
     x, y= data["freq"].unique(), data["thr"].unique()
@@ -83,7 +94,9 @@ for p,title in zip(parsecapps,titles):
     x1= data["freq"].unique() #np.arange(1.2,fmax,0.1)
     x2= data["thr"].unique()#np.arange(1,tmax+1,1)
     X,Y= np.meshgrid(x1,x2)
-    Z1= t(X,Y)
+    # Z1= t(X,Y)
+    # print(p, np.sum((Z1-Z)/Z)*100/Z.size, np.sum((Z1-Z)**2)/Z.size )
+    Z1= tlin(reslin[0],X,Y)
     print(p, np.sum((Z1-Z)/Z)*100/Z.size, np.sum((Z1-Z)**2)/Z.size )
     ax.set_xlabel('Frequency (GHz)',fontsize=12)
     ax.set_ylabel('Cores', fontsize=12)
