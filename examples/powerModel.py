@@ -30,8 +30,8 @@ def get_range(str_range):
     return _range
 
 def createPowerModel(path, save_model):
-    pw_model= powerModel()
-    pw_model.loadData(filename=path, verbose=0, load_sensors=False, freqs_filter=get_range(args.freqs), 
+    pw_model= powerModel(power_model_= lambda x,f,p: x[0]*f**3+x[1]*f+x[2], power_mode_n_=3)
+    pw_model.loadData(filename=path, verbose=2, load_sensors=False, freqs_filter= get_range(args.freqs), 
                                                                     thrs_filter= get_range(args.thrs))
     pw_model.fit()
     pw_model.save(save_model)
@@ -43,7 +43,7 @@ def createPowerModel(path, save_model):
 
 def visualizePowerModel(path):
     # Plot the measured values and the model
-    pw_model = powerModel(path)
+    pw_model = powerModel(path, power_model_= lambda x,f,p: x[0]*f**3+x[1]*f+x[2], power_mode_n_=3)
     freqs= get_range(args.freqs) if args.freqs else pw_model.frequencies
     thrs= get_range(args.thrs) if args.thrs else pw_model.threads
     est= pw_model.estimate(freqs, thrs)
