@@ -1,6 +1,6 @@
 from .rapl import RAPL
 from .ipmi import IPMI
-from .cpufreq import cpuFreq
+from cpufreq import cpuFreq
 
 import subprocess
 import threading
