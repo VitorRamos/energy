@@ -11,7 +11,10 @@ import argparse
 #                     'completo_ferret_3.pkl','completo_fluid_2.pkl','completo_freq.pkl',
 #                     'completo_rtview_3.pkl','completo_swaptions_2.pkl','completo_vips_3.pkl',
 #                     'completo_x264_1.pkl','completo_xhpl.pkl','completo_openmc_kernel_novo.pkl']
-# parsecapps_argnum= [1, 4, 6, 0, 1, 1, 7, 3, 1, 23, 1, 0]
+# parsecapps_argnum= [1, 4, 6, 
+#                       0, 1, 1, 
+#                       7, 3, 1, 
+#                       23, 1, 0]
 
 parser= argparse.ArgumentParser(description='Create and visualize performance model from monitor data')
 parser.add_argument('--create',type=str,help='Create performance model',nargs=4,metavar=('data','arg_num','dataframe','svr'))
