@@ -1,5 +1,5 @@
-from .rapl import RAPL
-from .ipmi import IPMI
+from sensors.rapl import RAPL
+from sensors.ipmi import IPMI
 from cpufreq import cpuFreq
 
 import subprocess
@@ -104,11 +104,15 @@ class monitorProcess:
             print("Saving")
         self.save(save_name)
         self.cpu.reset()
-        # cpu.set_governors("userspace")
+        self.cpu.set_governors("ondemand")
 
-    def run_dvfs(self, list_threads, list_args, idle_time, save_name, verbose= 0):
+    def run_dvfs(self, list_threads, list_args, idle_time, save_name, verbose= 0, governor="ondemand"):
         '''
-
+            list_threads: list of threads to run the profiler
+            list_args: program arguments
+            idle_time: idle time between runs
+            save_name: output file
+            verbose: level of verbose
         '''
         current_dir= os.getcwd()
         os.chdir(self.program_path)
@@ -116,7 +120,7 @@ class monitorProcess:
             self.cpu.reset()
             time.sleep(idle_time)
             self.cpu.disable_hyperthread()
-            self.cpu.set_governors("ondemand")
+            self.cpu.set_governors(governor)
             cpus = self.cpu.get_online_cpus()
 
             info_threads = []
@@ -124,7 +128,7 @@ class monitorProcess:
                 self.cpu.reset()
                 time.sleep(idle_time)
                 self.cpu.disable_hyperthread()
-                self.cpu.set_governors("ondemand")
+                self.cpu.set_governors(governor)
                 self.cpu.disable_cpu(cpus[thr:])
                 if verbose > 0:
                     print(cpus[thr:], self.cpu.get_online_cpus())
@@ -176,24 +180,27 @@ class monitorProcess:
         self.models= info_threads
            
         os.chdir(current_dir)
-        self.save(save_name)
+        self.save(save_name, governor)
         
         self.cpu.reset()
         self.cpu.set_governors("ondemand")
 
-    def save(self, save_name):
+    def save(self, save_name, governor=None):
         '''
-        TODO
+            save_name: name of the output file
         '''
         try:
             import platform
             from datetime import datetime
             self.models[0]["header"]= {"kernel":platform.platform(), 
                                         "date":datetime.now().strftime("%I:%M%p on %B %d, %Y")}
+            if governor is not None:
+                self.models[0]["header"]["governor"]= governor
+
             save_path = os.path.dirname(save_name)
             if not os.path.exists(save_path):
                 os.makedirs(save_path)
             with open(save_name, "wb") as f:
                 pickle.dump(self.models, f, pickle.HIGHEST_PROTOCOL)
         except Exception as e:
-            print("Error on saving", e)
+            print("Error saving file", e)
