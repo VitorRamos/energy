@@ -36,7 +36,7 @@ class performanceModel:
 
         if "header" in data[0].keys():
             self.header= data[0]["header"]
-            if verbose > 1:
+            if verbose >= 1:
                 print(self.header)
 
         has_ipmi= 'ipmi' in data[0]['threads'][0]['lpcpu'][0].keys()
@@ -72,7 +72,7 @@ class performanceModel:
                     df.append([d['freq'], thr['nthread'], p['arg'][arg_num], 
                         p['total_time'], pw/pw_size])
 
-                    if verbose > 0:
+                    if verbose > 1:
                         print(d['freq'], thr['nthread'], p['arg'][arg_num], 
                                 'T', p['total_time'], 'P', pw, 'E', p['total_time']*pw/pw_size)
 

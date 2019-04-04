@@ -4,20 +4,52 @@ from energyOptimal.energyModel import energyModel
 from energyOptimal.monitor import monitorProcess
 from energyOptimal.dvfsModel import dvfsModel
 
+import _pickle as pickle
 from matplotlib import pyplot as plt
 import pandas as pd
 import numpy as np
 import os
 
+import warnings
+warnings.filterwarnings("ignore", category=FutureWarning)
+
 # plt.style.use('seaborn')
 
-def createPerformanceModels(appname=None):
-    for p,idx in zip(parsecapps,parsecapps_argnum):
+arg_dict= {"black":1, "canneal":2, "dedup":6, 
+           "ferret":0, "fluid":1, "freq":0,
+           "rtview":7, "swap":3, "vips":1,
+           "x264":23, "xhpl":1, "openmc":0,
+           "body":2}
+
+
+def createPowerModels(profile_path= "data/power_model/", output_path="data/models/power_model/", appname=None):
+    import numpy as np
+    for p in os.listdir(profile_path):
+        print(p)
+        pw_model= powerModel()
+        pw_model.loadData(filename=profile_path+p,verbose=1,freqs_filter=np.arange(1.2,2.3,0.1))
+        pw_model.fit()
+        pickle.dump(pw_model, open(output_path+p,"wb"))
+        error= pw_model.error()
+        print("Power model constants, ", pw_model.power_model_c)
+        print("Error, ", error)
+
+def createPerformanceModels(profile_path= "data/performance_model", output_path="data/models/performance_model/", appname=None):
+    for p in os.listdir(profile_path): #zip(parsecapps,parsecapps_argnum):
+        print(p)
+        idx= -1
+        for k,v in arg_dict.items():
+            if k in p: 
+                idx= v 
+                break
+        if idx == -1:
+            raise("Program arg not found")
         if appname and not appname in p:
             continue
         perf_model= performanceModel()
-        df= perf_model.loadData(filename='data/performance_model/'+p, arg_num=idx, verbose=0,
-                                method='constTime')
+        df= perf_model.loadData(filename='data/performance_model/'+p, arg_num=idx, verbose=1, method='constTime')
+        print("Inputs: {} Freqs: {} Thrs: {}".format(len(df["in"].unique()), len(df["freq"].unique()), len(df["thr"].unique())))
+        print("Total ", len(df))
 
         if 'fluid' in p:
             perf_model.dataFrame= perf_model.dataFrame[perf_model.dataFrame['thr'].isin([1,2,4,8,16,32])]
@@ -29,15 +61,14 @@ def createPerformanceModels(appname=None):
             perf_model.dataFrame= perf_model.dataFrame[perf_model.dataFrame['in_cat'].isin(cats)]
 
         perf_model.fit(C_=10e3,gamma_=0.1)
-        scores= perf_model.crossValidate(method='mpe')
-        perf_model.saveDataframe('data/dataframes/'+p)
-        perf_model.saveSVR('data/svr/'+p)
+        # scores= perf_model.crossValidate(method='mpe')
+        pickle.dump(perf_model, open(output_path+p,"wb"))
 
-        print("Program", p)
-        print(df.head(5))
+        # print("Program", p)
+        # print(df.head(5))
         print("MPE ", perf_model.error(method='mpe')*100)
         print("MAE ", perf_model.error(method='mae'))
-        print("CrossValidation ", np.mean(scores)*100, scores)
+        # print("CrossValidation ", np.mean(scores)*100, scores)
 
 
 def figures(appname=None, energy= True, in_cmp=3):
@@ -45,8 +76,8 @@ def figures(appname=None, energy= True, in_cmp=3):
     for app, title in zip(parsec_models,titles):
         if (appname and not appname in app) or (not app):
             continue
-        pw_model= powerModel('data/ipmi_2-32_cpuload.pw')
-        perf_model= performanceModel('data/dataframes/'+app, 'data/svr/'+app)
+        pw_model= pickle.load(open("data/models/power_model/ipmi_2-32_cpuload.pkl","rb"))
+        perf_model= pickle.load(open("data/models/performance_model/"+app,"rb"))
         en_model= energyModel(pw_model,perf_model,freq_range_=np.arange(1.2e6,2.3e6,0.1e6)/1e6)
 
         plotData.setProps(xlabel='Frequencies (GHz)', ylabel='Active threads',
@@ -104,8 +135,7 @@ def createReducedPerformanceModel(path, arg_num, title_='', save_df='', save_svr
         if y_time[-1] <= 6 and less_5 == 0:
             less_5= y_time[-1]
             print('%s_%i.pkl'%(title_,train_sz))
-            perf_model.saveDataframe('data/dataframes/%s_%i.pkl'%(title_,train_sz))
-            perf_model.saveSVR('data/svr/%s_%i.pkl'%(title_,train_sz))
+            pickle.dump(perf_model, open("data/model/performance_model/%s_%i.pkl"%(title_,train_sz),"wb"))
             break
         # scores= perf_model.crossValidate(method='mpe')
         # print("CrossValidation ", np.mean(scores)*100, scores)
@@ -137,8 +167,9 @@ def mean_df():
         return df
 
     ondemand= avg_ondemand(['ferret_completo_2.pkl','ferret_completo_3.pkl'],6)
-    pw_model= powerModel('data/ipmi_2-32_cpuload.pw')
-    perf_model= performanceModel('data/dataframes/'+'completo_ferret_3.pkl', 'data/svr/'+'completo_ferret_3.pkl')
+
+    pw_model= pickle.load(open("data/models/power_model/ipmi_2-32_cpuload.pkl","rb"))
+    perf_model= pickle.load(open("data/models/performance_model/completo_ferret_3.pkl","rb"))
     en_model= energyModel(pw_model,perf_model)
 
     ond= ondemand[['in','thr','time','energy']].sort_values(['in','thr'])
@@ -194,8 +225,7 @@ def createReducedPerformanceModel2(path, arg_num, title_='', save_df='', save_sv
         print('%s_%i.pkl'%(title_,f), aux.shape, aux['energy'].sum()/1e6, error, perf_model.error()*100)
         print(use_freq)
 
-        perf_model.saveDataframe('data/dataframes/%s_%i.pkl'%(title_,f))
-        perf_model.saveSVR('data/svr/%s_%i.pkl'%(title_,f))
+        pickle.dump(perf_model, open("data/model/performance_model/%s_%i.pkl"%(title_,f),"wb"))
 
 
     fig, ax1 = plt.subplots()
@@ -221,8 +251,9 @@ def comparation(appname=None, proposed_bar=False, relative=True, thrs_filter= []
 
         ondemand= dvfsModel()
         ondemand.loadData(filename= 'data/dvfs/ondemand/'+dvfs, arg_num= arg, method='constTime')
-        pw_model= powerModel('data/ipmi_2-32_cpuload.pw')
-        perf_model= performanceModel('data/dataframes/'+model, 'data/svr/'+model)
+
+        pw_model= pickle.load(open("data/models/power_model/ipmi_2-32_cpuload.pkl","rb"))
+        perf_model= pickle.load(open("data/models/performance_model/"+model,"rb"))
         en_model= energyModel(pw_model,perf_model)
 
         #TODO verify if arguments match
@@ -320,10 +351,11 @@ parsecapps_argnum= [1, 4, 6,
                     23, 1, 0,
                     2]
 # energy_figures(parsecapps[0])
-# createPerformanceModels(parsecapps[-1])
+# createPerformanceModels()
+createPowerModels()
 # comparation(appname='dedup',proposed_bar=False,relative=True,thrs_filter=[])
 # figures(energy=False, in_cmp=3)
-comparation(appname="", proposed_bar=False,relative=True)
+# comparation(appname="", proposed_bar=False,relative=True)
 # for app,arg,title in zip(parsecapps,parsecapps_argnum,titles):
 #     if not 'freq' in app:
 #         continue

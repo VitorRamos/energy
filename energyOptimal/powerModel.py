@@ -23,12 +23,15 @@ class powerModel:
         ret1 = []
         ret2 = []
         for t in ipmi:
-            if 'sensor' in t.keys():
+            if 'sources' in t.keys():
+                ret1.append(t['sources'][0][name])
+                ret2.append(t['sources'][1][name])
+            elif 'sensor' in t.keys():
                 ret1.append(t['sensor']['sources'][0][name])
                 ret2.append(t['sensor']['sources'][1][name])
             else:
-                ret1.append(t['sources'][0][name])
-                ret2.append(t['sources'][1][name])
+                raise "Unexpected data format"
+                
         ret1 = np.sort(ret1)  # median
         ret2 = np.sort(ret2)
         if len(ret1) > 40:
@@ -38,15 +41,17 @@ class powerModel:
     def __getVectorRAPL(self, rapl):
         ret = []
         for t in rapl:
-            if type(t) == type(dict):
+            if type(t) == dict:
                 ret.append(float(t['sensor']))
             else:
                 ret.append(float(t))
         ret = np.sort(ret) # median
-        return ret[20:-20]
+        if len(ret) > 40:
+            return ret[20:-20]
+        return ret
 
     def loadData(self, filename, verbose=0, freqs_filter=[], thrs_filter=[],
-                ipmi_source='dcOutPower', load_sensors= True):
+                ipmi_source='dcOutPower', load_sensors= False):
         '''
             loads the power measuments from file
 
@@ -97,7 +102,7 @@ class powerModel:
                         pw = (np.mean(pw_1) + np.mean(pw_2))
                         pw_std = np.std(np.array(pw_1) + np.array(pw_2))
 
-                        if verbose:
+                        if verbose > 1:
                             print("{} {} {} {:.3f}±{:.3f} {:.3f}±{:.3f} {:.3f}±{:.3f} {:.3f} {:.3f}"
                                                     .format(len(pw_1), d['freq'], 
                                                     thr['nthread'], np.mean(pw_1),
@@ -110,7 +115,7 @@ class powerModel:
                         pw_vec = self.__getVectorRAPL(pcpu['rapl'])
                         pw = np.mean(pw_vec)
                         pw_std = np.std(pw_vec)
-                        if verbose:
+                        if verbose > 1:
                             print("{} {} {} {} {}".format(len(pw_vec),d['freq'],thr['nthread'],pw,pw_std))
                             print("-"*60)
 
@@ -171,7 +176,12 @@ class powerModel:
     def __getstate__(self):
         state = self.__dict__.copy()
         state["power_model"]= None
+        return state
     
+    def __setstate__(self, newstate):
+        newstate["power_model"]= lambda x,f,p: x[0]*f**3*p+x[1]*f*p+x[2]+x[3]*(np.floor(p/17)+1)
+        self.__dict__.update(newstate)
+
     def estimate(self, f, p, dataFrame=False):
         '''
         Estimetes the power with the model fited, need to call fit first

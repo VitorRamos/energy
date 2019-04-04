@@ -1,5 +1,5 @@
-from sensors.rapl import RAPL
-from sensors.ipmi import IPMI
+from .sensors.rapl import RAPL
+from .sensors.ipmi import IPMI
 from cpufreq import cpuFreq
 
 import subprocess
@@ -49,7 +49,7 @@ class monitorProcess:
                 info_threads = []
                 for thr in list_threads:
                     
-                    self.cpu.enable_cpu(cpus)
+                    self.cpu.reset(cpus)
                     self.cpu.set_governors("userspace")
                     self.cpu.disable_cpu(cpus[thr:])
                     self.cpu.set_frequencies(f)
