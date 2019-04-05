@@ -2,8 +2,9 @@ from energyOptimal.powerModel import powerModel
 from energyOptimal import plotData 
 import numpy as np
 import pandas as pd
+import _pickle as pickle
 
-pw_model_full= powerModel(filename='data/ipmi_2-32_cpuload.pw')
+pw_model_full= pickle.load(open("data/models/power_model/ipmi_2-32_cpuload.pkl","rb"))
 print("Percetage error pw_mode full: {}".format(pw_model_full.error()))
 
 thrs_filter=[

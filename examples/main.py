@@ -311,7 +311,7 @@ def comparation(appname=None, proposed_bar=False, relative=True, thrs_filter= []
         df['min_run']= df['train_energy']/df['min_save']
 
         df= df.sort_values('32_en',ascending=False)
-        df= pd.concat( (df,pd.DataFrame([['mean']+list(df.mean().values)],columns=df.columns)) )
+        df= pd.concat( (df,pd.DataFrame([['mean']+list(df[df>0].mean().values)],columns=df.columns)) )
         df.to_csv('tables/relative.csv')
         print(df)
 
@@ -350,9 +350,10 @@ parsecapps_argnum= [1, 4, 6,
                     7, 3, 1,
                     23, 1, 0,
                     2]
-# energy_figures(parsecapps[0])
-# createPerformanceModels()
 createPowerModels()
+# createPerformanceModels()
+
+# energy_figures(parsecapps[0])
 # comparation(appname='dedup',proposed_bar=False,relative=True,thrs_filter=[])
 # figures(energy=False, in_cmp=3)
 # comparation(appname="", proposed_bar=False,relative=True)
