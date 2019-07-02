@@ -11,11 +11,17 @@ legends= []
 axInput = None
 sin= None
 
-def setProps(xlabel='', ylabel='', zlabel='', title=''):
+def new_figure():
+    global fig, ax, legends
+    fig = plt.figure()
+    ax = fig.gca(projection='3d')
+    legends= []
+
+def setProps(xlabel='', ylabel='', zlabel='', title='', fontsize=10):
     ax.set_title(title)
-    ax.set_xlabel(xlabel, fontsize=10)
-    ax.set_ylabel(ylabel, fontsize=10)
-    ax.set_zlabel(zlabel, fontsize=10)
+    ax.set_xlabel(xlabel, fontsize=fontsize)
+    ax.set_ylabel(ylabel, fontsize=fontsize)
+    ax.set_zlabel(zlabel, fontsize=fontsize)
 
 def update_user(val):
     pass
@@ -32,10 +38,11 @@ def update_data(val):
 
     fig.canvas.draw_idle()
 
-def createSlider(label_, valmin_, valmax_):
+def createSlider(label_, valmin_, valmax_, valinit_=None):
     global sin, axInput
+    if valinit_ == None: valinit_= valmin_
     axInput= plt.axes([0.25, 0.0, 0.65, 0.03], facecolor='lightgoldenrodyellow')
-    sin = Slider(ax=axInput, label=label_, valmin=valmin_, valmax=valmax_, valinit=valmin_)
+    sin = Slider(ax=axInput, label=label_, valmin=valmin_, valmax=valmax_, valinit=valinit_)
     sin.on_changed(update_data)
     update_data(valmin_)
 
