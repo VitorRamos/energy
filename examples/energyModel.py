@@ -4,6 +4,7 @@ from energyOptimal.performanceModel import performanceModel
 from energyOptimal.energyModel import energyModel
 import numpy as np
 import pandas as pd
+import _pickle as pickle
 import argparse
 
 # titles=['Blackscholes','Canneal','Dedup', 'Ferret','Fluidanimate','Freqmine',
@@ -18,10 +19,9 @@ import argparse
 
 parser= argparse.ArgumentParser(description='Show energy model from power model and performance model')
 parser.add_argument('path_power',type=str,help='Path to power model fited')
-parser.add_argument('path_dataframe',type=str,help='Path to power dataframe')
-parser.add_argument('path_svr',type=str,help='Path to svr fited')
+parser.add_argument('path_perf',type=str,help='Path to performance model fited')
 parser.add_argument('--title',type=str,help='Figure title', default='',nargs='?')
-parser.add_argument('--freqs',type=str,help='Frequency range', default='1.2,2.3,0.1',nargs='?')
+parser.add_argument('--freqs',type=str,help='Frequency range', default='1.2,2.4,0.1',nargs='?')
 parser.add_argument('--thrs',type=str,help='Threads range', default='1;2,33,2',nargs='?')
 args = parser.parse_args()
 
@@ -41,13 +41,13 @@ def get_range(str_range):
             _range+= list([float(sr[0])])
     return _range
 
-pw_model= powerModel(args.path_power)
-perf_model= performanceModel(args.path_dataframe, args.path_svr)
+pw_model= pickle.load(open(args.path_power,"rb"))
+perf_model= pickle.load(open(args.path_perf,"rb"))
 en_model= energyModel(pw_model,perf_model, thr_range_= get_range(args.thrs), freq_range_= get_range(args.freqs))
 df= perf_model.dataFrame.sort_values(['freq','thr'])
 df_pred= en_model.dataFrame.sort_values(['freq','thr'])
-
-print(en_model.minimalEnergy())
+df_min= en_model.minimalEnergy()
+print(df_min)
 
 def update_data(val):
     d= int(val)
@@ -56,12 +56,16 @@ def update_data(val):
     df_pred_= df_pred[df_pred['in_cat']==d]
     df_= df[df['in_cat']==d]
 
+    opt_pt= df_min[df_min["in_cat"]==d][["freq","thr","energy_model"]].values[0]
+    print(opt_pt)
+
     df_= df_[df_['thr'].isin(df_pred_['thr'].unique())]
     plotData.ax.view_init(30,60)
-
+    plotData.ax.scatter(xs=opt_pt[0],ys=opt_pt[1],zs=opt_pt[2]/1e3,s=50,c="r",label="Optimal value")
+    plotData.legends+=["Optimal value"]
     if not df_.empty:
         plotData.plot3D(x=df_['freq'].unique(),y=df_['thr'].unique(),
-                                        z=df_['energy'].values/1e3,points=True,legend='Measurements')
+                                        z=df_['energy'].values/1e3,points=True,legend='Measurements', color_="blue")
     plotData.plot3D(x=df_pred_['freq'].unique(),y=df_pred_['thr'].unique(),
                                         z=df_pred_['energy_model'].values/1e3,points=False,legend='Model')
     
