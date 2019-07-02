@@ -18,8 +18,8 @@ import argparse
 #                       23, 1, 0]
 
 parser= argparse.ArgumentParser(description='Create and visualize performance model from monitor data')
-parser.add_argument('--create',type=str,help='Create performance model',nargs=4,metavar=('data','arg_num','save_name'))
-parser.add_argument('--show',type=str,help='Show performance model',nargs=2,metavar=('dataframe','svr'))
+parser.add_argument('--create',type=str,help='Create performance model',nargs=3,metavar=('data','arg_num','save_name'))
+parser.add_argument('--show',type=str,help='Show performance model',nargs=1,metavar=('svr'))
 parser.add_argument('--title',type=str,help='Title on figure',nargs=1)
 parser.add_argument('--freqs',type=str,help='Frequency range', default='1.2,2.3,0.1',nargs='?')
 parser.add_argument('--thrs',type=str,help='Threads range', default='',nargs='?')
