@@ -15,6 +15,8 @@ class monitorProcess:
         # RAPL(name= "service3",method="scontrol")
         if sensor == None:
             self.sensor= RAPL(name_="rapl", method="PERF")
+        else:
+            self.sensor= sensor
 
         self.cpu = cpuFreq()
         self.models = []
