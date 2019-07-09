@@ -87,7 +87,7 @@ class monitorProcess:
                         if verbose > 0:
                             print("Tempo total", tt)
 
-                        l1 = {"arg": list(arg), "total_time": tt, self.sensor.name: info_sensor}
+                        l1 = {"arg": list(arg), "total_time": tt, self.sensor.sensor_name: info_sensor}
                         info_pcpu.append(l1.copy())
 
                         time.sleep(idle_time)

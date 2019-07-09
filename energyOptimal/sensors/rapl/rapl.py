@@ -27,7 +27,7 @@ class RAPL:
 			except:
 				raise "Cant measure energy"
 
-		self.name= name_
+		self.sensor_name= name_ if name_ is not None else "rapl"
 		self.data= []
 		self.init_rapl= 0
 		self.end_rapl= 0

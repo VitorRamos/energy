@@ -21,7 +21,7 @@ def ToSigned(Num, signedbitB):
 class IPMI:
     def __init__(self, server, name_="admin", password_="admin"):
         
-        self.name= "ipmi"
+        self.sensor_name= "ipmi"
         self.server= server
         self.formPower= {"POWER_CONSUMPTION.XML":"(0,0)", "time_stamp":"","_":""}
         self.formSource= {"Get_PSInfoReadings.XML":"(0,0)","time_stamp":"","_":""}
