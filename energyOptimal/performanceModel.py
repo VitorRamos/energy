@@ -14,7 +14,7 @@ class performanceModel:
         self.svr= None
         self.header= None
 
-    def loadData(self, filename, arg_num, verbose=0, method= 'constTime',
+    def loadData(self, filename, arg_num=None, verbose=0, method= 'constTime',
                         freqs_filter=[], thrs_filter=[]):
         '''
         filename: string
@@ -58,7 +58,7 @@ class performanceModel:
                             if aux > 0:
                                 pw+=aux
                                 pw_size+=1                                
-                                df.append([d['freq'], thr['nthread'], p['arg'][arg_num], 
+                                df.append([d['freq'], thr['nthread'], p['arg'][arg_num] if arg_num else " ".join(p['arg']), 
                                         s['time'], aux])
 
                     elif has_ipmi:
@@ -66,14 +66,14 @@ class performanceModel:
                             pot = float(s['sensor']['sources'][0]['dcOutPower']+
                                     s['sensor']['sources'][1]['dcOutPower'])
                             pw+=pot
-                            df.append([d['freq'], thr['nthread'], p['arg'][arg_num], s['time'], pot])
+                            df.append([d['freq'], thr['nthread'], p['arg'][arg_num] if arg_num else " ".join(p['arg']), s['time'], pot])
                         pw_size= len(p['ipmi'])
                      
-                    df.append([d['freq'], thr['nthread'], p['arg'][arg_num], 
+                    df.append([d['freq'], thr['nthread'], p['arg'][arg_num] if arg_num else " ".join(p['arg']), 
                         p['total_time'], pw/pw_size])
 
                     if verbose > 1:
-                        print(d['freq'], thr['nthread'], p['arg'][arg_num], 
+                        print(d['freq'], thr['nthread'], p['arg'][arg_num] if arg_num else " ".join(p['arg']), 
                                 'T', p['total_time'], 'P', pw, 'E', p['total_time']*pw/pw_size)
 
         self.dataFrame = pd.DataFrame(df, columns=['freq', 'thr', 'in', 'time', 'pw'])
