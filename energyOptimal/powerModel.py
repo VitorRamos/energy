@@ -214,4 +214,4 @@ class powerModel:
         if absolute:
             return np.sum(np.abs(real-estimative))/len(real)
 
-        return np.max(np.abs( (real-estimative)/real ) )*100
+        return np.mean(np.abs( (real-estimative)/real ) )*100
