@@ -58,7 +58,7 @@ class performanceModel:
                             if aux > 0:
                                 pw+=aux
                                 pw_size+=1                                
-                                df.append([d['freq'], thr['nthread'], p['arg'][arg_num] if arg_num else " ".join(p['arg']), 
+                                df.append([d['freq'], thr['nthread'], p['arg'][arg_num] if (arg_num is not None) else " ".join(p['arg']), 
                                         s['time'], aux])
 
                     elif has_ipmi:
@@ -66,10 +66,10 @@ class performanceModel:
                             pot = float(s['sensor']['sources'][0]['dcOutPower']+
                                     s['sensor']['sources'][1]['dcOutPower'])
                             pw+=pot
-                            df.append([d['freq'], thr['nthread'], p['arg'][arg_num] if arg_num else " ".join(p['arg']), s['time'], pot])
+                            df.append([d['freq'], thr['nthread'], p['arg'][arg_num] if (arg_num is not None) else " ".join(p['arg']), s['time'], pot])
                         pw_size= len(p['ipmi'])
                      
-                    df.append([d['freq'], thr['nthread'], p['arg'][arg_num] if arg_num else " ".join(p['arg']), 
+                    df.append([d['freq'], thr['nthread'], p['arg'][arg_num] if (arg_num is not None) else " ".join(p['arg']), 
                         p['total_time'], pw/pw_size])
 
                     if verbose > 1:
