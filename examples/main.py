@@ -15,8 +15,8 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 
 # plt.style.use('seaborn')
 
-arg_dict= {"black":1, "canneal":2, "dedup":6, 
-           "ferret":0, "fluid":1, "freq":0,
+arg_dict= {"black":1, "canneal":4, "dedup":6, 
+           "ferret":0, "fluid":1, "freq":1,
            "rtview":7, "swap":3, "vips":1,
            "x264":23, "xhpl":1, "openmc":0,
            "body":2}
@@ -34,8 +34,12 @@ def createPowerModels(profile_path= "data/power_model/", output_path="data/model
         print("Power model constants, ", pw_model.power_model_c)
         print("Error, ", error)
 
-def createPerformanceModels(profile_path= "data/performance_model", output_path="data/models/performance_model/", appname=None):
+def createPerformanceModels(profile_path= "data/performance_model/", output_path="data/models/performance_model/", appname=None):
     for p in os.listdir(profile_path): #zip(parsecapps,parsecapps_argnum):
+        if not p.endswith("pkl"): continue
+        # if "freq" not in p: continue
+        # if "canneal" not in p: continue
+        if p in os.listdir(output_path): continue
         print(p)
         idx= -1
         for k,v in arg_dict.items():
@@ -47,9 +51,14 @@ def createPerformanceModels(profile_path= "data/performance_model", output_path=
         if appname and not appname in p:
             continue
         perf_model= performanceModel()
-        df= perf_model.loadData(filename='data/performance_model/'+p, arg_num=idx, verbose=1, method='constTime')
+        df= perf_model.loadData(filename=profile_path+p, arg_num=idx, verbose=1, method='constTime')
         print("Inputs: {} Freqs: {} Thrs: {}".format(len(df["in"].unique()), len(df["freq"].unique()), len(df["thr"].unique())))
         print("Total ", len(df))
+        # print("Inputs : ", df["in"].unique())
+        # print("Threads : ", df["thr"].unique())
+        # print("Frequencies : ", df["freq"].unique())
+        # print("")
+        # continue
 
         if 'fluid' in p:
             perf_model.dataFrame= perf_model.dataFrame[perf_model.dataFrame['thr'].isin([1,2,4,8,16,32])]
@@ -350,8 +359,9 @@ parsecapps_argnum= [1, 4, 6,
                     7, 3, 1,
                     23, 1, 0,
                     2]
-createPowerModels()
-# createPerformanceModels()
+# createPowerModels()
+createPerformanceModels()
+# createPerformanceModels("new_data/","new_data/ready/","ferret")
 
 # energy_figures(parsecapps[0])
 # comparation(appname='dedup',proposed_bar=False,relative=True,thrs_filter=[])

@@ -21,7 +21,7 @@ parser= argparse.ArgumentParser(description='Create and visualize performance mo
 parser.add_argument('--create',type=str,help='Create performance model',nargs=3,metavar=('data','arg_num','save_name'))
 parser.add_argument('--show',type=str,help='Show performance model',nargs=1,metavar=('svr'))
 parser.add_argument('--title',type=str,help='Title on figure',nargs=1)
-parser.add_argument('--freqs',type=str,help='Frequency range', default='1.2,2.3,0.1',nargs='?')
+parser.add_argument('--freqs',type=str,help='Frequency range', default='',nargs='?') # 1.2,2.3,0.1
 parser.add_argument('--thrs',type=str,help='Threads range', default='',nargs='?')
 parser.add_argument('--ins',type=str,help='Input range', default='',nargs='?')
 args= parser.parse_args()

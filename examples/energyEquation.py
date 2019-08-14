@@ -19,7 +19,7 @@ fmax= 2.2
 tmax= 16
 
 for p,title in zip(parsecapps,titles):
-    # if not "x264" in p: continue
+    if not "rt" in p: continue
 
     fig = plt.figure()
     ax = fig.gca(projection='3d')
@@ -27,15 +27,19 @@ for p,title in zip(parsecapps,titles):
     var= "energy"
     f= open("data/dataframes/"+p,"rb")
     data= pickle.load(f)
-    data= data[data["in_cat"]==5]
+    data= data[data["in_cat"]==3]
     data= data[["freq","thr","time","energy"]]
     data= data[data["thr"]<=16]
     data[var]= data[var]/data[var].max()
 
-    data= data[data["thr"].isin([1,2,4,8,16])]
-    data= data[data["freq"].isin([1.3, 1.5, 1.7, 1.9, 2.1])]
+    # data= data[data["thr"].isin([1,2,4,8,16])]
+    # data= data[data["freq"].isin([1.3, 1.5, 1.7, 1.9, 2.1])]
 
     train_data= data
+    train_data= train_data.query(" (freq == 1.3 and thr == 1) or (freq == 2.1 and thr == 16) ")
+    # train_data= train_data[train_data["thr"].isin([1,16])]
+    # train_data= train_data[train_data["freq"].isin([1.3])]
+    print(train_data)
     # train_data= data[data["thr"].isin( [data["thr"].min(), data["thr"].max()] )]
     # train_data= train_data[train_data["freq"].isin( [data["freq"].min(), data["freq"].max()] )]
     # print(train_data)
@@ -78,8 +82,9 @@ for p,title in zip(parsecapps,titles):
     x2= np.arange(1,tmax+1,1)
     X,Y= np.meshgrid(x1,x2)
     Z1= t(X,Y)
-    Z1= tlin(reslin[0],X,Y)
+    # Z1= tlin(reslin[0],X,Y)
     ax.plot_wireframe(X, Y, Z1, antialiased=True, color="r", label="Equation")
+
 
     x, y= data["freq"].unique(), data["thr"].unique()
     z= np.reshape(data[var].values, (len(x), len(y)))
@@ -87,20 +92,31 @@ for p,title in zip(parsecapps,titles):
     Y = np.arange(0, len(y), 1)
     X, Y = np.meshgrid(X, Y)
     Z = z[X, Y]
-    X, Y = np.meshgrid(x, y)
-    ax.scatter(X, Y, Z, antialiased=True, color="b", label="Measurements")
+    # X, Y = np.meshgrid(x, y)
+    ax.scatter(data["freq"], data["thr"], data[var], antialiased=True, color="b", label="Measurements")
 
 
     x1= data["freq"].unique() #np.arange(1.2,fmax,0.1)
     x2= data["thr"].unique()#np.arange(1,tmax+1,1)
     X,Y= np.meshgrid(x1,x2)
-    # Z1= t(X,Y)
+    Z1= t(X,Y)
+    print(p, np.sum(np.abs(Z1-Z)/Z)*100/Z.size, np.sum((Z1-Z)**2)/Z.size )
+    # Z1= tlin(reslin[0],X,Y)
     # print(p, np.sum((Z1-Z)/Z)*100/Z.size, np.sum((Z1-Z)**2)/Z.size )
-    Z1= tlin(reslin[0],X,Y)
-    print(p, np.sum((Z1-Z)/Z)*100/Z.size, np.sum((Z1-Z)**2)/Z.size )
+
+
+    # x, y= train_data["freq"].unique(), train_data["thr"].unique()
+    # z= np.reshape(train_data[var].values, (len(x), len(y)))
+    # X = np.arange(0, len(x), 1)
+    # Y = np.arange(0, len(y), 1)
+    # X, Y = np.meshgrid(X, Y)
+    # Z = z[X, Y]
+    # X, Y = np.meshgrid(x, y)
+    ax.scatter(train_data["freq"], train_data["thr"], train_data[var], color="black", label="TrainData",s=100)
+
     ax.set_xlabel('Frequency (GHz)',fontsize=12)
     ax.set_ylabel('Cores', fontsize=12)
-    ax.set_zlabel('Energy (KJ)', fontsize=12)
+    ax.set_zlabel(var, fontsize=12)
     plt.xticks(fontsize=12)
     plt.yticks(fontsize=12)
     plt.title(title,fontsize=16,loc='left')
@@ -109,5 +125,5 @@ for p,title in zip(parsecapps,titles):
     if 'hpl' in p:
         ax.set_zlim(np.min(Z),15)
     plt.tight_layout()
-    # plt.show()
+    plt.show()
     # plt.savefig("%s.png"%(title.lower()))

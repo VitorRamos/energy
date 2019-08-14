@@ -32,9 +32,11 @@ def get_range(str_range):
 
 def createPowerModel(path, save_model):
     pw_model= powerModel()
-    # pw_model.power_model_= lambda x,f,p: x[0]*f**3+x[1]*f+x[2]
-    # pw_model.power_mode_n_=3
-    pw_model.loadData(filename=path, verbose=2, load_sensors=False, freqs_filter= get_range(args.freqs), 
+    # pw_model.power_model= lambda x,f,p: p*(x[0]*f**3+x[1]*f+x[2])+x[3]+x[4]*(np.floor(p/17)+1)
+    # pw_model.power_mode_n = 5
+    pw_model.power_model= lambda x,f,p: p*(x[0]*f**3+x[1]*f+x[2])+x[3]#+x[4]*(np.floor(p/17)+1)
+    pw_model.power_mode_n = 4
+    pw_model.loadData(filename=path, verbose=1, load_sensors=False, freqs_filter= get_range(args.freqs), 
                                                                     thrs_filter= get_range(args.thrs))
     pw_model.fit()
     pickle.dump(pw_model, open(save_model,"wb"))
@@ -47,14 +49,18 @@ def createPowerModel(path, save_model):
 def visualizePowerModel(path):
     # Plot the measured values and the model
     pw_model = pickle.load(open(path,"rb"))
+    # pw_model.power_model= lambda x,f,p: p*(x[0]*f**3+x[1]*f+x[2])+x[3]+x[4]*(np.floor(p/17)+1)
+    # pw_model.power_mode_n = 5
     # pw_model.power_model_= lambda x,f,p: x[0]*f**3+x[1]*f+x[2]
-
+    pw_model.power_model= lambda x,f,p: p*(x[0]*f**3+x[1]*f+x[2])+x[3]#+x[4]*(np.floor(p/17)+1)
+    pw_model.power_mode_n = 4
+    print(pw_model.power_model_c)
     freqs= get_range(args.freqs) if args.freqs else pw_model.frequencies
     thrs= get_range(args.thrs) if args.thrs else pw_model.threads
     est= pw_model.estimate(freqs, thrs)
     plotData.setProps(xlabel= "Frequencies (GHz)", ylabel= "Active Cores", zlabel= "Power (W)")
-    plotData.plot3D(x=pw_model.frequencies, y=pw_model.threads, z=pw_model.powers, legend='Measurements')
-    plotData.plot3D(x=freqs, y=thrs, z=est, points=False, legend='Model')
+    plotData.plot3D(x=pw_model.frequencies, y=pw_model.threads, z=pw_model.powers, legend="Measurements")
+    plotData.plot3D(x=freqs, y=thrs, z=est, points=False, legend="Model")
     plotData.plotShow(showLegend= True)
     # plotData.savePlot(filename= 'pw_model.png', showLegend= True)
 
