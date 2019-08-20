@@ -39,10 +39,10 @@ class monitorProcess:
             self.cpu.reset()
             self.cpu.disable_hyperthread()
             self.cpu.set_governors("userspace")
-            freq = self.cpu.get_available_frequencies()
+            freq = self.cpu.available_frequencies
             cpus = self.cpu.get_online_cpus()
             if list_threads == None:
-                list_threads= cpus
+                list_threads= cpus[1:]
             if list_frequencies == None:
                 list_frequencies= freq
 
@@ -55,7 +55,7 @@ class monitorProcess:
                     self.cpu.set_governors("userspace")
                     self.cpu.disable_cpu(cpus[thr:])
                     self.cpu.set_frequencies(f)
-                    #TODO assert len(online_cpus==thr) and freq == f
+                    # assert len(online_cpus==thr) and freq == f
 
                     info_pcpu = []
                     for arg in list_args:
